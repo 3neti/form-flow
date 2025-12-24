@@ -1,12 +1,25 @@
 {
     "name": "3neti/form-flow",
-    "description": "Driver-based form flow orchestration system with DirXML-style mapping",
+    "description": "Driver-based form flow orchestration system with DirXML-style mapping for Laravel applications",
+    "keywords": [
+        "laravel",
+        "form-flow",
+        "multi-step-form",
+        "wizard",
+        "inertia",
+        "vue",
+        "dirxml",
+        "mapper",
+        "driver"
+    ],
+    "homepage": "https://github.com/3neti/form-flow",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
             "name": "Lester Hurtado",
-            "email": "lester@hurtado.ph"
+            "email": "lester@hurtado.ph",
+            "homepage": "https://github.com/lbhurtado"
         }
     ],
     "autoload": {

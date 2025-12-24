@@ -1,6 +1,8 @@
 # Form Flow
 
 [![Latest Version](https://img.shields.io/packagist/v/3neti/form-flow.svg?style=flat-square)](https://packagist.org/packages/3neti/form-flow)
+[![Tests](https://img.shields.io/github/actions/workflow/status/3neti/form-flow/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/3neti/form-flow/actions/workflows/tests.yml)
+[![Total Downloads](https://img.shields.io/packagist/dt/3neti/form-flow.svg?style=flat-square)](https://packagist.org/packages/3neti/form-flow)
 [![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
 
 Driver-based form flow orchestration system with DirXML-style mapping for Laravel applications.
