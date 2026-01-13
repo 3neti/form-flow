@@ -116,6 +116,11 @@ class FormHandler implements FormHandlerInterface
             'fields.*.step' => 'nullable',
             'fields.*.readonly' => 'nullable|boolean',
             'fields.*.disabled' => 'nullable|boolean',
+            // UI Enhancement: Optional field metadata for visual hierarchy
+            'fields.*.emphasis' => 'nullable|string|in:hero,normal',
+            'fields.*.group' => 'nullable|string',
+            'fields.*.help_text' => 'nullable|string',
+            'fields.*.variant' => 'nullable|string|in:readonly-badge,normal',
             'title' => 'nullable|string',
             'description' => 'nullable|string',
         ];

@@ -254,6 +254,90 @@ bio:
 - `file`
 - Custom types (if you have components): `recipient_country`, `bank_account`, `settlement_rail`
 
+**Field UI Enhancement Metadata** (Optional):
+
+Since v1.1, fields support optional metadata for visual hierarchy and improved UX:
+
+```yaml
+fields:
+  - name: "mobile"
+    type: "text"
+    label: "Mobile Number"
+    required: true
+    emphasis: "hero"              # NEW: Makes field prominent (hero | normal)
+    help_text: "Enter your mobile number to receive cash"  # NEW: Helper text below field
+  
+  - name: "amount"
+    type: "number"
+    readonly: true
+    variant: "readonly-badge"     # NEW: Displays as badge in summary section
+  
+  - name: "bank_account"
+    type: "bank_account"
+    required: true
+    group: "bank_details"         # NEW: Groups related fields in fieldset
+    help_text: "Select your bank or e-wallet"
+```
+
+**New Field Properties:**
+
+- `emphasis`: `"hero"` | `"normal"` (default: `"normal"`)
+  - `"hero"`: Displays field with large label (text-2xl), larger input (py-4), and prominent styling
+  - Use for the primary action/input (e.g., mobile number in wallet form)
+
+- `group`: `string`
+  - Groups multiple fields together in a visual fieldset with border and background
+  - All fields with the same group name are rendered together
+  - Example: `group: "bank_details"` for bank + account number fields
+
+- `help_text`: `string`
+  - Displays explanatory text below the field input
+  - Styled as text-sm text-muted-foreground
+  - Use for contextual help or instructions
+
+- `variant`: `"readonly-badge"` | `"normal"` (default: `"normal"`)
+  - `"readonly-badge"`: Displays readonly fields as compact badges in summary section at top
+  - Use for non-editable context (amount, currency, settlement method)
+  - Automatically arranged in responsive grid (3 cols desktop, 2 tablet, 1 mobile)
+
+**Complete Example:**
+
+```yaml
+steps:
+  wallet_info:
+    handler: "form"
+    title: "Wallet Information"
+    config:
+      fields:
+        # Summary section - readonly badges
+        - name: "amount"
+          type: "number"
+          readonly: true
+          variant: "readonly-badge"
+          default: "{{ amount }}"
+        
+        # Hero section - primary input
+        - name: "mobile"
+          type: "text"
+          required: true
+          emphasis: "hero"
+          help_text: "Enter your mobile number to receive the cash"
+        
+        # Grouped section - bank details
+        - name: "bank_account"
+          type: "bank_account"
+          required: true
+          group: "bank_details"
+        
+        - name: "account_number"
+          type: "text"
+          required: true
+          group: "bank_details"
+          help_text: "GCash users: auto-filled from mobile"
+```
+
+See `config/form-flow-drivers/wallet-enhanced-example.yaml` for a complete working example.
+
 #### 3. `location` - GPS Capture
 
 ```yaml
