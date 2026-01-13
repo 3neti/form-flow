@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Loader2 } from 'lucide-vue-next';
 import { CountrySelect, SettlementRailSelect, BankEMISelect } from '@/components/financial';
 
@@ -26,6 +28,11 @@ interface FieldDefinition {
     step?: number;
     readonly?: boolean;
     disabled?: boolean;
+    // UI Enhancement: Optional field metadata for visual hierarchy
+    emphasis?: 'hero' | 'normal';
+    group?: string;
+    help_text?: string;
+    variant?: 'readonly-badge' | 'normal';
 }
 
 interface AutoSyncConfig {
@@ -152,6 +159,53 @@ if (props.auto_sync?.enabled) {
 // Computed properties
 const pageTitle = computed(() => props.title || 'Form');
 
+// Field organization by UI metadata
+const summaryFields = computed(() => 
+    props.fields.filter(f => f.variant === 'readonly-badge')
+);
+
+const heroFields = computed(() => 
+    props.fields.filter(f => f.emphasis === 'hero' && f.variant !== 'readonly-badge')
+);
+
+const groupedFields = computed(() => {
+    const groups: Record<string, FieldDefinition[]> = {};
+    props.fields
+        .filter(f => f.group && f.variant !== 'readonly-badge' && f.emphasis !== 'hero')
+        .forEach(field => {
+            const groupName = field.group!;
+            if (!groups[groupName]) {
+                groups[groupName] = [];
+            }
+            groups[groupName].push(field);
+        });
+    return groups;
+});
+
+const normalFields = computed(() => 
+    props.fields.filter(f => 
+        !f.group && 
+        f.variant !== 'readonly-badge' && 
+        f.emphasis !== 'hero'
+    )
+);
+
+// Helper to format currency/number for badges
+function formatBadgeValue(field: FieldDefinition): string {
+    const value = formData.value[field.name];
+    if (value === null || value === undefined || value === '') return '-';
+    
+    // Format amount as currency
+    if (field.name === 'amount' && typeof value === 'number') {
+        return new Intl.NumberFormat('en-PH', {
+            style: 'currency',
+            currency: 'PHP',
+        }).format(value / 100); // Assuming amount is in cents
+    }
+    
+    return String(value);
+}
+
 // Form submission
 async function handleSubmit() {
     submitting.value = true;
@@ -235,8 +289,165 @@ function getFieldPlaceholder(field: FieldDefinition): string {
             </CardHeader>
             <CardContent>
                 <form @submit.prevent="handleSubmit" class="space-y-6">
-                    <!-- Dynamic Fields -->
-                    <div v-for="field in fields" :key="field.name" class="space-y-2">
+                    <!-- Summary Badges Section -->
+                    <div v-if="summaryFields.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+                        <div v-for="field in summaryFields" :key="field.name" class="flex flex-col">
+                            <span class="text-xs text-muted-foreground mb-1">{{ getFieldLabel(field) }}</span>
+                            <Badge variant="secondary" class="text-sm font-medium py-1 px-3 justify-start">
+                                {{ formatBadgeValue(field) }}
+                            </Badge>
+                        </div>
+                    </div>
+
+                    <!-- Hero Fields Section -->
+                    <div v-if="heroFields.length > 0" class="space-y-6 mb-8">
+                        <div v-for="field in heroFields" :key="field.name" class="space-y-3">
+                            <Label 
+                                :for="field.name" 
+                                :class="[
+                                    'text-2xl font-bold',
+                                    { 'text-destructive': errors[field.name] }
+                                ]"
+                            >
+                                {{ getFieldLabel(field) }}
+                                <span v-if="field.required" class="text-destructive">*</span>
+                            </Label>
+                            
+                            <!-- Hero field input with larger styling -->
+                            <Input
+                                v-if="field.type === 'text' || field.type === 'email' || field.type === 'tel'"
+                                :id="field.name"
+                                v-model="formData[field.name]"
+                                :type="field.type"
+                                :placeholder="getFieldPlaceholder(field)"
+                                :required="field.required"
+                                :readonly="field.readonly"
+                                :disabled="field.disabled"
+                                :class="[
+                                    'py-4 text-lg ring-2 ring-primary/20',
+                                    { 'border-destructive ring-destructive/20': errors[field.name] }
+                                ]"
+                                autofocus
+                            />
+                            
+                            <!-- Help text -->
+                            <p v-if="field.help_text" class="text-sm text-muted-foreground">
+                                {{ field.help_text }}
+                            </p>
+                            
+                            <!-- Error message -->
+                            <p v-if="errors[field.name]" class="text-sm text-destructive">
+                                {{ errors[field.name] }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Separator before grouped/normal fields -->
+                    <div v-if="(heroFields.length > 0) && (Object.keys(groupedFields).length > 0 || normalFields.length > 0)" class="relative my-8">
+                        <Separator />
+                        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-4">
+                            <span class="text-sm text-muted-foreground font-medium">Bank Account (Optional)</span>
+                        </div>
+                    </div>
+
+                    <!-- Grouped Fields Sections -->
+                    <div v-for="(groupFields, groupName) in groupedFields" :key="groupName" class="space-y-4">
+                        <fieldset class="border rounded-lg p-4 bg-muted/5">
+                            <legend class="text-sm font-medium text-muted-foreground px-2">{{ groupName.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}</legend>
+                            
+                            <div class="space-y-4 mt-2">
+                                <div v-for="field in groupFields" :key="field.name" class="space-y-2">
+                                    <!-- Render field with standard template below -->
+                                    <template v-if="field.type === 'text' || field.type === 'email' || field.type === 'date' || field.type === 'number'">
+                                        <Label :for="field.name" :class="{ 'text-destructive': errors[field.name] }">
+                                            {{ getFieldLabel(field) }}
+                                            <span v-if="field.required" class="text-destructive">*</span>
+                                        </Label>
+                                        <Input
+                                            :id="field.name"
+                                            v-model="formData[field.name]"
+                                            :type="field.type"
+                                            :placeholder="getFieldPlaceholder(field)"
+                                            :required="field.required"
+                                            :min="field.min"
+                                            :max="field.max"
+                                            :step="field.step"
+                                            :readonly="field.readonly"
+                                            :disabled="field.disabled"
+                                            :class="{ 'border-destructive': errors[field.name] }"
+                                        />
+                                        <p v-if="field.help_text" class="text-xs text-muted-foreground">
+                                            {{ field.help_text }}
+                                        </p>
+                                        <p v-if="errors[field.name]" class="text-sm text-destructive">
+                                            {{ errors[field.name] }}
+                                        </p>
+                                    </template>
+
+                                    <!-- Bank Account (BankEMISelect) -->
+                                    <template v-else-if="field.type === 'bank_account'">
+                                        <Label :for="field.name" :class="{ 'text-destructive': errors[field.name] }">
+                                            {{ getFieldLabel(field) }}
+                                            <span v-if="field.required" class="text-destructive">*</span>
+                                        </Label>
+                                        <BankEMISelect
+                                            v-model="formData[field.name]"
+                                            :settlement-rail="formData.settlement_rail || null"
+                                            :disabled="field.disabled || field.readonly"
+                                        />
+                                        <p v-if="field.help_text" class="text-xs text-muted-foreground">
+                                            {{ field.help_text }}
+                                        </p>
+                                        <p v-if="errors[field.name]" class="text-sm text-destructive">
+                                            {{ errors[field.name] }}
+                                        </p>
+                                    </template>
+
+                                    <!-- Settlement Rail -->
+                                    <template v-else-if="field.type === 'settlement_rail'">
+                                        <Label :for="field.name" :class="{ 'text-destructive': errors[field.name] }">
+                                            {{ getFieldLabel(field) }}
+                                            <span v-if="field.required" class="text-destructive">*</span>
+                                        </Label>
+                                        <SettlementRailSelect
+                                            v-model="formData[field.name]"
+                                            :amount="formData.amount || 0"
+                                            :bank-code="formData.bank_account || null"
+                                            :disabled="field.disabled || field.readonly"
+                                        />
+                                        <p v-if="field.help_text" class="text-xs text-muted-foreground">
+                                            {{ field.help_text }}
+                                        </p>
+                                        <p v-if="errors[field.name]" class="text-sm text-destructive">
+                                            {{ errors[field.name] }}
+                                        </p>
+                                    </template>
+
+                                    <!-- Recipient Country -->
+                                    <template v-else-if="field.type === 'recipient_country'">
+                                        <Label :for="field.name" :class="{ 'text-destructive': errors[field.name] }">
+                                            {{ getFieldLabel(field) }}
+                                            <span v-if="field.required" class="text-destructive">*</span>
+                                        </Label>
+                                        <CountrySelect
+                                            v-model="formData[field.name]"
+                                            :disabled="field.disabled || field.readonly"
+                                        />
+                                        <p v-if="field.help_text" class="text-xs text-muted-foreground">
+                                            {{ field.help_text }}
+                                        </p>
+                                        <p v-if="errors[field.name]" class="text-sm text-destructive">
+                                            {{ errors[field.name] }}
+                                        </p>
+                                    </template>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                    <!-- Normal Fields (non-grouped, non-hero, non-badge) -->
+                    <div v-if="normalFields.length > 0" class="space-y-4">
+                        <div v-for="field in normalFields" :key="field.name" class="space-y-2">
                         <!-- Text Input -->
                         <div v-if="field.type === 'text' || field.type === 'email' || field.type === 'date' || field.type === 'number'">
                             <Label :for="field.name" :class="{ 'text-destructive': errors[field.name] }">
