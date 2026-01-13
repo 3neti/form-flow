@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { router, Head } from '@inertiajs/vue3';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -190,17 +190,32 @@ const normalFields = computed(() =>
     )
 );
 
+// Auto-focus hero field on mount
+onMounted(() => {
+    nextTick(() => {
+        const heroField = heroFields.value[0];
+        if (heroField) {
+            const inputElement = document.getElementById(heroField.name) as HTMLInputElement;
+            inputElement?.focus();
+        }
+    });
+});
+
 // Helper to format currency/number for badges
 function formatBadgeValue(field: FieldDefinition): string {
     const value = formData.value[field.name];
+    
     if (value === null || value === undefined || value === '') return '-';
     
-    // Format amount as currency
-    if (field.name === 'amount' && typeof value === 'number') {
-        return new Intl.NumberFormat('en-PH', {
-            style: 'currency',
-            currency: 'PHP',
-        }).format(value / 100); // Assuming amount is in cents
+    // Format amount as currency (50 = ₱50.00)
+    if (field.name === 'amount') {
+        const numericValue = typeof value === 'number' ? value : parseFloat(value);
+        if (!isNaN(numericValue)) {
+            return new Intl.NumberFormat('en-PH', {
+                style: 'currency',
+                currency: 'PHP',
+            }).format(numericValue);
+        }
     }
     
     return String(value);
@@ -283,8 +298,7 @@ function getFieldPlaceholder(field: FieldDefinition): string {
         <Card>
             <CardHeader>
                 <CardTitle>{{ title }}</CardTitle>
-                <CardDescription v-if="description">
-                    {{ description }}
+                <CardDescription v-if="description" class="text-base" v-html="description.replace(/voucher (\S+)/i, 'voucher <strong>$1</strong>').replace(/₱[\d,]+\.\d{2}/, '<strong>$&</strong>').replace(/from (.+)$/, 'from <strong>$1</strong>')">
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -293,8 +307,8 @@ function getFieldPlaceholder(field: FieldDefinition): string {
                     <div v-if="summaryFields.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
                         <div v-for="field in summaryFields" :key="field.name" class="flex flex-col">
                             <span class="text-xs text-muted-foreground mb-1">{{ getFieldLabel(field) }}</span>
-                            <Badge variant="secondary" class="text-sm font-medium py-1 px-3 justify-start">
-                                {{ formatBadgeValue(field) }}
+                            <Badge variant="secondary" class="text-base py-2 px-4 justify-start w-full">
+                                <span class="font-bold">{{ formatBadgeValue(field) }}</span>
                             </Badge>
                         </div>
                     </div>
@@ -324,7 +338,7 @@ function getFieldPlaceholder(field: FieldDefinition): string {
                                 :readonly="field.readonly"
                                 :disabled="field.disabled"
                                 :class="[
-                                    'py-4 text-lg ring-2 ring-primary/20',
+                                    'py-4 text-lg ring-2 ring-primary/20 focus-visible:ring-4 focus-visible:ring-primary/30 transition-all',
                                     { 'border-destructive ring-destructive/20': errors[field.name] }
                                 ]"
                                 autofocus
@@ -346,7 +360,7 @@ function getFieldPlaceholder(field: FieldDefinition): string {
                     <div v-if="(heroFields.length > 0) && (Object.keys(groupedFields).length > 0 || normalFields.length > 0)" class="relative my-8">
                         <Separator />
                         <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-4">
-                            <span class="text-sm text-muted-foreground font-medium">Bank Account (Optional)</span>
+                            <span class="text-sm text-muted-foreground font-medium">Bank Account Details</span>
                         </div>
                     </div>
 
@@ -612,6 +626,7 @@ function getFieldPlaceholder(field: FieldDefinition): string {
                             <p v-if="errors[field.name]" class="text-sm text-destructive">
                                 {{ errors[field.name] }}
                             </p>
+                        </div>
                         </div>
                     </div>
 
