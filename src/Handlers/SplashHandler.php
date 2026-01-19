@@ -70,6 +70,9 @@ class SplashHandler implements FormHandlerInterface
         // Use default content if none provided
         if (empty($content)) {
             $content = $this->getDefaultContent($contentContext);
+        } else {
+            // Also process variables in explicitly provided content (e.g., from rider.splash)
+            $content = $this->replaceVariables($content, $contentContext);
         }
         
         return Inertia::render('form-flow/core/Splash', [
