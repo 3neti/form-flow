@@ -99,6 +99,8 @@ class DriverService
             'has_signature' => in_array('signature', $fieldNames),
             'has_kyc' => in_array('kyc', $fieldNames),
             'has_otp' => in_array('otp', $fieldNames),
+            'has_reference_code' => in_array('reference_code', $fieldNames),
+            'has_gross_monthly_income' => in_array('gross_monthly_income', $fieldNames),
             
             // Rider data for splash page and post-redemption behavior
             'rider' => [
