@@ -84,7 +84,7 @@ class FormHandler implements FormHandlerInterface
         return Inertia::render('form-flow/core/GenericForm', [
             'flow_id' => $context['flow_id'] ?? null,
             'step_index' => $context['step_index'] ?? 0,
-            'step_name' => $step->step_name ?? null,
+        'step_name' => $resolvedConfig['step_name'] ?? null,
             'title' => $title,
             'description' => $description,
             'fields' => $fields,
