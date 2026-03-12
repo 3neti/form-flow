@@ -61,28 +61,42 @@ class SplashHandler implements FormHandlerInterface
         // Extract voucher code from config or context
         $voucherCode = $step->config['voucher_code'] ?? $context['voucher_code'] ?? $context['code'] ?? null;
         
-        // Build context for default content generation
-        $contentContext = array_merge($context, [
-            'voucher_code' => $voucherCode,
-            'code' => $voucherCode,
-        ]);
-        
-        // Use default content if none provided
-        if (empty($content)) {
-            $content = $this->getDefaultContent($contentContext);
-        } else {
-            // Also process variables in explicitly provided content (e.g., from rider.splash)
-            $content = $this->replaceVariables($content, $contentContext);
-        }
-        
-        return Inertia::render('form-flow/core/Splash', [
+        $props = [
             'flow_id' => $context['flow_id'] ?? null,
             'step_index' => $context['step_index'] ?? 0,
             'title' => $title,
-            'content' => $content,
             'timeout' => $timeout,
             'button_label' => config('splash.button_label', 'Continue Now'),
-        ]);
+        ];
+        
+        // When no custom content and no config override, pass structured props
+        // so the Vue component can render a beautiful native splash screen
+        $isDefault = empty($content) && empty(config('splash.default_content'));
+        
+        if ($isDefault) {
+            $copyrightYear = config('splash.copyright_year', date('Y'));
+            $copyrightHolder = config('splash.copyright_holder', '3neti R&D OPC');
+            
+            $props['is_default_splash'] = true;
+            $props['content'] = '';
+            $props['voucher_code'] = $voucherCode;
+            $props['app_name'] = config('app.name', 'Laravel');
+            $props['app_logo'] = config('splash.app_logo', '/images/logo-orange.png');
+            $props['app_author'] = config('splash.app_author', '3neti R&D OPC');
+            $props['copyright_text'] = "© {$copyrightYear} {$copyrightHolder}";
+        } else {
+            $contentContext = array_merge($context, [
+                'voucher_code' => $voucherCode,
+                'code' => $voucherCode,
+            ]);
+            
+            $props['is_default_splash'] = false;
+            $props['content'] = empty($content)
+                ? $this->getDefaultContent($contentContext)
+                : $this->replaceVariables($content, $contentContext);
+        }
+        
+        return Inertia::render('form-flow/core/Splash', $props);
     }
     
     /**
