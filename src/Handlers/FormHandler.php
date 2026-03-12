@@ -84,6 +84,7 @@ class FormHandler implements FormHandlerInterface
         return Inertia::render('form-flow/core/GenericForm', [
             'flow_id' => $context['flow_id'] ?? null,
             'step_index' => $context['step_index'] ?? 0,
+            'step_name' => $step->step_name ?? null,
             'title' => $title,
             'description' => $description,
             'fields' => $fields,
@@ -121,6 +122,7 @@ class FormHandler implements FormHandlerInterface
             'fields.*.group' => 'nullable|string',
             'fields.*.help_text' => 'nullable|string',
             'fields.*.variant' => 'nullable|string|in:readonly-badge,normal',
+            'fields.*.persist' => 'nullable|boolean',
             'title' => 'nullable|string',
             'description' => 'nullable|string',
         ];
