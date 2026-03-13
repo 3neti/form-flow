@@ -48,13 +48,11 @@ class SplashHandler implements FormHandlerInterface
     {
         $content = $step->config['content'] ?? '';
         
-        // Handle timeout - use default if empty/null/not set
+        // Handle timeout - always cast to int to avoid string "0" from env()
         $timeout = $step->config['timeout'] ?? null;
-        if (empty($timeout) && $timeout !== 0) {
-            $timeout = config('splash.default_timeout', 5);
-        } else {
-            $timeout = (int) $timeout;
-        }
+        $timeout = $timeout !== null
+            ? (int) $timeout
+            : (int) config('splash.default_timeout', 5);
         
         $title = $step->config['title'] ?? null;
         
