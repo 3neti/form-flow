@@ -89,6 +89,7 @@ class SplashHandler implements FormHandlerInterface
             ]);
             
             $props['is_default_splash'] = false;
+            $props['voucher_code'] = $voucherCode;
             $props['content'] = empty($content)
                 ? $this->getDefaultContent($contentContext)
                 : $this->replaceVariables($content, $contentContext);
