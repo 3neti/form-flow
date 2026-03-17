@@ -80,7 +80,7 @@ class DriverService
         
         return [
             'code' => $voucher->code,
-            'amount' => (int) ($instructions->cash->amount ?? 0),
+            'amount' => (float) ($instructions->cash->amount ?? 0),
             'currency' => $instructions->cash->currency ?? 'PHP',
             'owner_name' => $voucher->owner->name ?? 'Unknown',
             'base_url' => url(''),
