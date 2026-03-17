@@ -111,6 +111,12 @@ class DriverService
                 'splash_timeout' => $instructions->rider->splash_timeout ?? null,
             ],
             
+            // Slice / divisible voucher context
+            'slice_mode' => $voucher->getSliceMode(),
+            'min_withdrawal' => $voucher->getMinWithdrawal(),
+            'available_balance' => $voucher->getRemainingBalance() ?: (float) ($instructions->cash->amount ?? 0),
+            'max_slices' => $voucher->getMaxSlices(),
+            
             // Full voucher data for advanced templates
             'voucher' => [
                 'code' => $voucher->code,
