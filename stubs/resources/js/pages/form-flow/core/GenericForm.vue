@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { AlertCircle, Loader2 } from 'lucide-vue-next';
 import { CountrySelect, SettlementRailSelect, BankEMISelect } from '@/components/financial';
 import PhoneInput from '@/components/ui/phone-input/PhoneInput.vue';
+import NumberInputWithKeypad from '@/components/NumberInputWithKeypad.vue';
 import { initializeTheme } from '@/composables/useTheme';
 
 initializeTheme();
@@ -455,23 +456,21 @@ function getFieldPlaceholder(field: FieldDefinition): string {
                         </div>
                     </div>
 
-                    <!-- Open-mode: editable amount input -->
+                    <!-- Open-mode: editable amount input with numpad -->
                     <div v-if="isOpenSlice" class="space-y-2">
                         <Label for="amount" :class="{ 'text-destructive': errors['amount'] }">
                             Withdrawal Amount
                             <span class="text-destructive">*</span>
                         </Label>
-                        <Input
-                            id="amount"
-                            v-model.number="formData['amount']"
-                            type="number"
+                        <NumberInputWithKeypad
+                            v-model="formData['amount']"
+                            prefix="₱"
                             :min="sliceMinWithdrawal"
                             :max="sliceAvailableBalance"
-                            :step="0.01"
+                            :allow-decimal="true"
+                            keypad-mode="amount"
+                            keypad-title="Withdrawal Amount"
                             :placeholder="`Min ${formatCurrency(sliceMinWithdrawal)}`"
-                            required
-                            class="text-center text-lg font-semibold"
-                            :class="{ 'border-destructive': errors['amount'] }"
                         />
                         <p class="text-xs text-muted-foreground text-center">
                             {{ formatCurrency(sliceMinWithdrawal) }} – {{ formatCurrency(sliceAvailableBalance) }} • Up to {{ sliceMaxSlices }} withdrawals
