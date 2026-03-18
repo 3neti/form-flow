@@ -457,11 +457,8 @@ function getFieldPlaceholder(field: FieldDefinition): string {
                     </div>
 
                     <!-- Open-mode: editable amount input with numpad -->
-                    <div v-if="isOpenSlice" class="space-y-2">
-                        <Label for="amount" :class="{ 'text-destructive': errors['amount'] }">
-                            Withdrawal Amount
-                            <span class="text-destructive">*</span>
-                        </Label>
+                    <fieldset v-if="isOpenSlice" class="border rounded-lg px-3 pt-1 pb-3 bg-muted/5">
+                        <legend class="text-sm font-medium text-muted-foreground px-2">Withdrawal Amount</legend>
                         <NumberInputWithKeypad
                             v-model="formData['amount']"
                             prefix="₱"
@@ -470,13 +467,19 @@ function getFieldPlaceholder(field: FieldDefinition): string {
                             :allow-decimal="true"
                             keypad-mode="amount"
                             keypad-title="Withdrawal Amount"
-                            :placeholder="`Min ${formatCurrency(sliceMinWithdrawal)}`"
+                            hero
                         />
-                        <p class="text-xs text-muted-foreground text-center">
-                            {{ formatCurrency(sliceMinWithdrawal) }} – {{ formatCurrency(sliceAvailableBalance) }} • Up to {{ sliceMaxSlices }} withdrawals
-                        </p>
-                        <p v-if="errors['amount']" class="text-sm text-destructive">{{ errors['amount'] }}</p>
-                    </div>
+                        <div class="flex flex-wrap items-center justify-center gap-1.5 mt-1">
+                            <Badge variant="outline" class="px-2 py-0.5 text-xs font-medium">
+                                {{ formatCurrency(sliceMinWithdrawal) }} – {{ formatCurrency(sliceAvailableBalance) }}
+                            </Badge>
+                            <span class="text-muted-foreground text-xs">•</span>
+                            <Badge variant="outline" class="px-2 py-0.5 text-xs font-medium">
+                                Up to {{ sliceMaxSlices }} withdrawals
+                            </Badge>
+                        </div>
+                        <p v-if="errors['amount']" class="text-sm text-destructive text-center mt-1">{{ errors['amount'] }}</p>
+                    </fieldset>
 
                     <!-- Fixed-mode: show slice info badge -->
                     <div v-else-if="isFixedSlice && sliceMaxSlices > 0" class="text-center">
