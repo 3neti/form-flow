@@ -696,16 +696,20 @@ function getFieldPlaceholder(field: FieldDefinition): string {
                         </div>
 
                         <!-- Voucher code separator between first and remaining groups -->
-                        <div v-if="groupIndex === 0 && Object.keys(groupedFields).length > 1 && voucherCode && heroFields.length === 0" class="relative my-8">
-                            <Separator />
-                            <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2">
-                                <span class="inline-flex items-center gap-1.5 px-3 py-0.5 text-sm font-mono font-semibold tracking-widest text-primary bg-primary/5 border border-primary/20 rounded-full">
-                                    <span class="text-primary/40" aria-hidden="true">||</span>
-                                    {{ voucherCode }}
-                                    <span class="text-primary/40" aria-hidden="true">||</span>
-                                </span>
-                            </div>
+                      <div
+                          v-if="groupIndex === 0 && Object.keys(groupedFields).length > 1 && voucherCode && heroFields.length === 0"
+                          class="relative my-8"
+                      >
+                        <Separator />
+
+                        <div class="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center bg-background/0 px-2">
+                          <span class="inline-flex items-center justify-center gap-1.5 rounded-full border border-primary/20 bg-background px-3 py-0.5 text-sm font-mono font-semibold tracking-widest text-primary">
+                              <span class="text-primary/40" aria-hidden="true">||</span>
+                              {{ voucherCode }}
+                              <span class="text-primary/40" aria-hidden="true">||</span>
+                          </span>
                         </div>
+                      </div>
                     </template>
 
                     <!-- Normal Fields (non-grouped, non-hero, non-badge) -->

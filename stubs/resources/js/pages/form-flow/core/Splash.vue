@@ -158,71 +158,81 @@ async function handleContinue() {
     <Head :title="title || 'Welcome'" />
 
     <!-- ============================================================ -->
-    <!-- Default Splash: full-screen, logo-centric launch screen      -->
+    <!-- Default Splash: modal-style launch screen                    -->
     <!-- ============================================================ -->
-    <div
-        v-if="is_default_splash"
-        class="default-splash min-h-screen relative flex flex-col items-center justify-center bg-gradient-to-b from-primary/5 via-background to-background px-6 select-none"
-    >
-        <!-- Hero logo -->
-        <img
-            v-if="app_logo"
-            :src="app_logo"
-            :alt="app_name ?? 'Logo'"
-            class="w-36 h-36 sm:w-40 sm:h-40 object-contain drop-shadow-lg mb-6 animate-fade-in"
-        />
+  <div
+      v-if="is_default_splash"
+      class="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-5 py-8 select-none"
+  >
+    <Card class="mx-auto max-w-md border-0 bg-card/80 shadow-sm">
+      <CardContent
+          class="flex min-h-[620px] flex-col items-center justify-center px-6 py-8 text-center"
+      >
+          <!-- Hero logo -->
+          <img
+              v-if="app_logo"
+              :src="app_logo"
+              :alt="app_name ?? 'Logo'"
+              class="mb-4 h-20 w-20 object-contain drop-shadow-lg animate-fade-in sm:h-24 sm:w-24"
+          />
 
-        <!-- App name -->
-        <p class="text-lg sm:text-xl font-medium tracking-wide text-gray-400 dark:text-gray-500 mb-10 animate-fade-in-delay">
+          <p
+              v-if="app_name"
+              class="mb-6 text-base font-medium tracking-wide text-gray-400 animate-fade-in-delay dark:text-gray-500 sm:text-lg"
+          >
             {{ app_name }}
-        </p>
+          </p>
 
-        <!-- Voucher code badge (Pay Code Framing Convention: || CODE ||) -->
-        <div v-if="voucher_code" class="text-center mb-14 animate-fade-in-delay">
-            <p class="text-[11px] uppercase tracking-[0.2em] text-gray-400 dark:text-gray-600 mb-2">
-                Redeeming
+          <div v-if="voucher_code" class="mb-8 text-center animate-fade-in-delay">
+            <p class="mb-2 text-[11px] uppercase tracking-[0.2em] text-gray-400 dark:text-gray-600">
+              Redeeming
             </p>
-            <span class="inline-flex items-center gap-2 px-5 py-1.5 text-lg sm:text-xl font-mono font-semibold tracking-widest text-primary bg-primary/5 border border-primary/20 rounded-full">
-                <span class="text-primary/40" aria-hidden="true">||</span>
-                {{ voucher_code }}
-                <span class="text-primary/40" aria-hidden="true">||</span>
-            </span>
-        </div>
 
-        <!-- Continue button + progress -->
-        <div class="w-full max-w-xs space-y-3">
+            <span
+                class="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-5 py-1.5 font-mono text-lg font-semibold tracking-widest text-primary sm:text-xl"
+            >
+                        <span class="text-primary/40" aria-hidden="true">||</span>
+                        {{ voucher_code }}
+                        <span class="text-primary/40" aria-hidden="true">||</span>
+                    </span>
+          </div>
+
+          <div class="w-full max-w-xs space-y-3">
             <Button
                 @click="handleContinue"
                 :disabled="submitting"
                 class="w-full rounded-full"
             >
-                <span v-if="submitting">Please wait…</span>
-                <span v-else>{{ button_label }}</span>
+              <span v-if="submitting">Please wait…</span>
+              <span v-else>{{ button_label }}</span>
             </Button>
 
             <div v-if="timeoutSeconds > 0" class="space-y-1">
-                <div class="w-full bg-muted rounded-full h-1 overflow-hidden">
-                    <div
-                        class="h-full rounded-full bg-primary/50 transition-all duration-1000 ease-linear"
-                        :style="{ width: `${progressPercentage}%` }"
-                    />
-                </div>
-                <p class="text-center text-[11px] text-muted-foreground">
-                    {{ remainingSeconds }}s
-                </p>
-            </div>
-        </div>
+              <div class="h-1 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                    class="h-full rounded-full bg-primary/50 transition-all duration-1000 ease-linear"
+                    :style="{ width: `${progressPercentage}%` }"
+                />
+              </div>
 
-        <!-- Footer -->
-        <footer class="absolute bottom-5 inset-x-0 text-center space-y-0.5">
+              <p class="text-center text-[11px] text-muted-foreground">
+                {{ remainingSeconds }}s
+              </p>
+            </div>
+          </div>
+
+          <footer class="mt-6 space-y-0.5 text-center">
             <p v-if="app_author" class="text-[10px] text-gray-300 dark:text-gray-700">
-                {{ app_author }}
+              {{ app_author }}
             </p>
+
             <p v-if="copyright_text" class="text-[10px] text-gray-300 dark:text-gray-700">
-                {{ copyright_text }}
+              {{ copyright_text }}
             </p>
-        </footer>
-    </div>
+          </footer>
+        </CardContent>
+      </Card>
+  </div>
 
     <!-- ============================================================ -->
     <!-- Custom Splash: Card-based layout for rider->splash content   -->

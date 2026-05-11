@@ -195,7 +195,8 @@ const dataSections = computed(() => groupDataBySection(flatData.value));
 
         <!-- Completed / Review State -->
         <div v-else class="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-5 py-8">
-            <div class="mx-auto max-w-md space-y-8">
+          <Card class="mx-auto max-w-md border-0 bg-card/80 shadow-sm">
+              <CardContent class="space-y-8 px-6 py-8">
 
                 <!-- Hero: amount + voucher code -->
                 <div class="text-center pt-4 space-y-3">
@@ -239,7 +240,8 @@ const dataSections = computed(() => groupDataBySection(flatData.value));
                 <p class="text-center text-[10px] text-gray-300 dark:text-gray-700 font-mono">
                     {{ state.reference_id }}
                 </p>
-            </div>
+              </CardContent>
+          </Card>
         </div>
     </template>
 
