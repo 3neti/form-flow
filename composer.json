@@ -33,6 +33,9 @@
         }
     },
     "extra": {
+        "branch-alias": {
+            "dev-main": "1.99-dev"
+        },
         "laravel": {
             "providers": [
                 "LBHurtado\\FormFlowManager\\FormFlowServiceProvider"
@@ -43,7 +46,7 @@
         "php": "^8.2",
         "symfony/yaml": "^7.4",
         "spatie/laravel-data": "^4.0",
-        "illuminate/support": "^11.0 || ^12.0"
+"illuminate/support": "^11.0 || ^12.0 || ^13.0"
     },
     "require-dev": {
         "orchestra/testbench": "^10.3",

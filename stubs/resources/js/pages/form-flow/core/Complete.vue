@@ -34,13 +34,25 @@ let timerInterval: number | null = null;
 let redirectTimeout: number | null = null;
 
 // Detect if this is a disburse flow
-const isDisburseFlow = computed(() => props.state.reference_id.startsWith('disburse-'));
+const isClaimFlow = computed(() =>
+    props.state.reference_id.startsWith('claim-')
+);
+
+const isDisburseFlow = computed(() =>
+    props.state.reference_id.startsWith('disburse-')
+);
+
+const isRedemptionFlow = computed(() =>
+    isClaimFlow.value || isDisburseFlow.value
+);
 
 // Extract voucher code from reference_id (format: disburse-{CODE}-{timestamp})
 const voucherCode = computed(() => {
-    if (!isDisburseFlow.value) return null;
-    const parts = props.state.reference_id.split('-');
-    return parts.slice(1, -1).join('-');
+  if (!isRedemptionFlow.value) return null;
+
+  const parts = props.state.reference_id.split('-');
+
+  return parts.slice(1, -1).join('-');
 });
 
 // Progress percentage (0-100)
@@ -83,33 +95,42 @@ function stopTimer() {
 }
 
 function handleClose() {
-    if (isDisburseFlow.value && voucherCode.value) {
-        isProcessing.value = true;
-        showError.value = false;
-        errorMessage.value = '';
-        startTimer();
-        
-        router.post(`/disburse/${voucherCode.value}/redeem`, {
-            flow_id: props.flow_id,
-            reference_id: props.state.reference_id,
-        }, {
-            onError: (errors) => {
-                stopTimer();
-                showError.value = true;
-                errorMessage.value = errors.code || errors.error || 'An error occurred during processing';
-                
-                redirectTimeout = window.setTimeout(() => {
-                    isProcessing.value = false;
-                }, 3000);
-            },
-            onSuccess: () => {
-                stopTimer();
-                isProcessing.value = false;
-            },
-        });
-    } else {
-        window.location.href = '/form-flow-demo.html';
-    }
+  if (isRedemptionFlow.value && voucherCode.value) {
+    isProcessing.value = true;
+    showError.value = false;
+    errorMessage.value = '';
+    startTimer();
+
+    const submitUrl = isClaimFlow.value
+        ? `/x/claim/${voucherCode.value}/submit`
+        : `/disburse/${voucherCode.value}/redeem`;
+
+    router.post(submitUrl, {
+      flow_id: props.flow_id,
+      reference_id: props.state.reference_id,
+    }, {
+      onError: (errors) => {
+        stopTimer();
+        showError.value = true;
+        errorMessage.value =
+            errors.code ||
+            errors.error ||
+            'An error occurred during processing';
+
+        redirectTimeout = window.setTimeout(() => {
+          isProcessing.value = false;
+        }, 3000);
+      },
+      onSuccess: () => {
+        stopTimer();
+        isProcessing.value = false;
+      },
+    });
+
+    return;
+  }
+
+  window.location.href = '/form-flow-demo.html';
 }
 
 // Cleanup on unmount
@@ -134,7 +155,7 @@ const dataSections = computed(() => groupDataBySection(flatData.value));
     <!-- ============================================================ -->
     <!-- Disburse Flow: clean, branded layout                         -->
     <!-- ============================================================ -->
-    <template v-if="isDisburseFlow">
+  <template v-if="isRedemptionFlow">
 
         <!-- Processing State -->
         <div v-if="isProcessing" class="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 via-background to-background px-6">
