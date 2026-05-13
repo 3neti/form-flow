@@ -77,11 +77,16 @@ class DriverService
             fn($f) => is_object($f) && isset($f->value) ? $f->value : (string)$f,
             $inputFields
         );
-        
+
+        $allowedMobile = $instructions->cash->validation->mobile ?? null;
+        $hasAllowedMobile = filled($allowedMobile);
+
         return [
             'code' => $voucher->code,
             'amount' => (float) ($instructions->cash->amount ?? 0),
             'currency' => $instructions->cash->currency ?? 'PHP',
+            'allowed_mobile' => $allowedMobile,
+            'should_persist_mobile' => $hasAllowedMobile ? 'false' : 'true',
             'owner_name' => $voucher->owner->name ?? 'Unknown',
             'base_url' => url(''),
             'timestamp' => time(),
@@ -249,6 +254,21 @@ class DriverService
             
             // Process field templates
             $processedField = $processor->processArray($fieldCopy, $context);
+
+            foreach (['persist', 'readonly', 'required'] as $booleanKey) {
+                if (array_key_exists($booleanKey, $processedField)) {
+                    $value = $processedField[$booleanKey];
+
+                    if ($value === 'true') {
+                        $processedField[$booleanKey] = true;
+                    }
+
+                    if ($value === 'false') {
+                        $processedField[$booleanKey] = false;
+                    }
+                }
+            }
+
             $processedFields[] = $processedField;
         }
         
