@@ -4,77 +4,78 @@ declare(strict_types=1);
 
 namespace LBHurtado\FormFlowManager\Services;
 
-use LBHurtado\FormFlowManager\Data\FormFlowInstructionsData;
-use LBHurtado\Voucher\Models\Voucher;
 use Illuminate\Support\Facades\File;
+use LBHurtado\FormFlowManager\Data\FormFlowInstructionsData;
 use Symfony\Component\Yaml\Yaml;
 
 /**
  * Driver Service
- * 
- * Transforms VoucherInstructionsData to FormFlowInstructionsData using YAML configuration.
+ *
+ * Transforms voucher-like instruction sources to FormFlowInstructionsData using YAML configuration.
  * This service uses declarative YAML files to define form flow transformations.
  */
 class DriverService
 {
     protected array $config;
+
     protected ?TemplateProcessor $templateProcessor = null;
-    
+
     /**
-     * Load driver config from YAML file
+     * Load driver config from YAML file.
      */
     public function loadConfig(string $driverName = 'voucher-redemption'): void
     {
         $path = config_path("form-flow-drivers/{$driverName}.yaml");
-        
-        if (!File::exists($path)) {
+
+        if (! File::exists($path)) {
             throw new \RuntimeException("Driver config not found: {$path}");
         }
-        
+
         $this->config = Yaml::parseFile($path);
     }
-    
+
     /**
-     * Get or create TemplateProcessor instance
+     * Get or create TemplateProcessor instance.
      */
     protected function getTemplateProcessor(): TemplateProcessor
     {
-        if (!$this->templateProcessor) {
+        if (! $this->templateProcessor) {
             $this->templateProcessor = new TemplateProcessor();
         }
-        
+
         return $this->templateProcessor;
     }
-    
+
     /**
-     * Transform voucher to form flow instructions using YAML driver
+     * Transform source object to form flow instructions using YAML driver.
      */
-    public function transform(Voucher $voucher): FormFlowInstructionsData
+    public function transform(object $voucher): FormFlowInstructionsData
     {
-        if (!isset($this->config)) {
+        if (! isset($this->config)) {
             $this->loadConfig();
         }
-        
+
         $context = $this->buildContext($voucher);
-        
+
         return FormFlowInstructionsData::from([
             'reference_id' => $this->processReferenceId($context),
             'steps' => $this->processSteps($context),
             'callbacks' => $this->processCallbacks($context),
         ]);
     }
-    
+
     /**
-     * Build context from voucher for template processing
+     * Build context from source object for template processing.
      */
-    protected function buildContext(Voucher $voucher): array
+    protected function buildContext(object $voucher): array
     {
         $instructions = $voucher->instructions;
         $inputFields = $instructions->inputs->fields ?? [];
-        
-        // Convert enum fields to strings for comparison
+
         $fieldNames = array_map(
-            fn($f) => is_object($f) && isset($f->value) ? $f->value : (string)$f,
+            fn ($field) => is_object($field) && isset($field->value)
+                ? $field->value
+                : (string) $field,
             $inputFields
         );
 
@@ -86,28 +87,26 @@ class DriverService
             'amount' => (float) ($instructions->cash->amount ?? 0),
             'currency' => $instructions->cash->currency ?? 'PHP',
             'allowed_mobile' => $allowedMobile,
+            'has_allowed_mobile' => $hasAllowedMobile ? 'true' : 'false',
             'should_persist_mobile' => $hasAllowedMobile ? 'false' : 'true',
             'owner_name' => $voucher->owner->name ?? 'Unknown',
             'base_url' => url(''),
             'timestamp' => time(),
-            
-            // Splash configuration
+
             'splash_enabled' => config('splash.enabled', true) ? 'true' : 'false',
-            
-            // Field presence flags for conditional rendering
-            'has_name' => in_array('name', $fieldNames),
-            'has_email' => in_array('email', $fieldNames),
-            'has_birth_date' => in_array('birth_date', $fieldNames),
-            'has_address' => in_array('address', $fieldNames),
-            'has_location' => in_array('location', $fieldNames),
-            'has_selfie' => in_array('selfie', $fieldNames),
-            'has_signature' => in_array('signature', $fieldNames),
-            'has_kyc' => in_array('kyc', $fieldNames),
-            'has_otp' => in_array('otp', $fieldNames),
-            'has_reference_code' => in_array('reference_code', $fieldNames),
-            'has_gross_monthly_income' => in_array('gross_monthly_income', $fieldNames),
-            
-            // Rider data for splash page and post-redemption behavior
+
+            'has_name' => in_array('name', $fieldNames, true),
+            'has_email' => in_array('email', $fieldNames, true),
+            'has_birth_date' => in_array('birth_date', $fieldNames, true),
+            'has_address' => in_array('address', $fieldNames, true),
+            'has_location' => in_array('location', $fieldNames, true),
+            'has_selfie' => in_array('selfie', $fieldNames, true),
+            'has_signature' => in_array('signature', $fieldNames, true),
+            'has_kyc' => in_array('kyc', $fieldNames, true),
+            'has_otp' => in_array('otp', $fieldNames, true),
+            'has_reference_code' => in_array('reference_code', $fieldNames, true),
+            'has_gross_monthly_income' => in_array('gross_monthly_income', $fieldNames, true),
+
             'rider' => [
                 'message' => $instructions->rider->message ?? null,
                 'url' => $instructions->rider->url ?? null,
@@ -115,14 +114,14 @@ class DriverService
                 'splash' => $instructions->rider->splash ?? null,
                 'splash_timeout' => $instructions->rider->splash_timeout ?? null,
             ],
-            
-            // Slice / divisible voucher context
-            'slice_mode' => $voucher->getSliceMode(),
-            'min_withdrawal' => $voucher->getMinWithdrawal(),
-            'available_balance' => $voucher->getRemainingBalance() ?: (float) ($instructions->cash->amount ?? 0),
-            'max_slices' => $voucher->getMaxSlices(),
-            
-            // Full voucher data for advanced templates
+
+            'slice_mode' => method_exists($voucher, 'getSliceMode') ? $voucher->getSliceMode() : null,
+            'min_withdrawal' => method_exists($voucher, 'getMinWithdrawal') ? $voucher->getMinWithdrawal() : null,
+            'available_balance' => method_exists($voucher, 'getRemainingBalance')
+                ? ($voucher->getRemainingBalance() ?: (float) ($instructions->cash->amount ?? 0))
+                : (float) ($instructions->cash->amount ?? 0),
+            'max_slices' => method_exists($voucher, 'getMaxSlices') ? $voucher->getMaxSlices() : null,
+
             'voucher' => [
                 'code' => $voucher->code,
                 'instructions' => [
@@ -134,190 +133,175 @@ class DriverService
             ],
         ];
     }
-    
-    /**
-     * Process reference ID from YAML template
-     */
+
     protected function processReferenceId(array $context): string
     {
         $template = $this->config['reference_id'] ?? 'disburse-{{ code }}-{{ timestamp }}';
+
         return $this->getTemplateProcessor()->process($template, $context);
     }
-    
-    /**
-     * Process callbacks from YAML templates
-     */
+
     protected function processCallbacks(array $context): array
     {
         $callbacksConfig = $this->config['callbacks'] ?? [];
         $processor = $this->getTemplateProcessor();
-        
+
         return [
             'on_complete' => $processor->process($callbacksConfig['on_complete'] ?? '', $context),
             'on_cancel' => $processor->process($callbacksConfig['on_cancel'] ?? '', $context),
         ];
     }
-    
-    /**
-     * Process steps from YAML configuration
-     */
+
     protected function processSteps(array $context): array
     {
         $stepsConfig = $this->config['steps'] ?? [];
         $processor = $this->getTemplateProcessor();
         $steps = [];
-        
-        foreach ($stepsConfig as $stepName => $stepConfig) {
-            // Check condition (if specified)
+
+        foreach ($stepsConfig as $stepConfig) {
             if (isset($stepConfig['condition'])) {
                 $conditionResult = $processor->process($stepConfig['condition'], $context);
-                if (!$this->evaluateCondition($conditionResult)) {
-                    continue; // Skip this step
+
+                if (! $this->evaluateCondition($conditionResult)) {
+                    continue;
                 }
             }
-            
+
             $handlerName = $stepConfig['handler'] ?? 'form';
-            
-            // Check if handler is available
-            if (!$this->isHandlerAvailable($handlerName)) {
-                // Create fallback step for missing handler
-                $step = $this->createMissingHandlerStep(
+
+            if (! $this->isHandlerAvailable($handlerName)) {
+                $steps[] = $this->createMissingHandlerStep(
                     $handlerName,
                     $stepConfig['title'] ?? 'Unknown Step',
                     $stepConfig
                 );
-                $steps[] = $step;
+
                 continue;
             }
-            
-            // Process step configuration
+
             $step = [
                 'handler' => $handlerName,
                 'config' => [],
             ];
-            
-            // Add step_name if present (for named references)
+
             if (isset($stepConfig['step_name'])) {
                 $step['config']['step_name'] = $stepConfig['step_name'];
             }
-            
-            // Process title and description
+
             if (isset($stepConfig['title'])) {
                 $step['config']['title'] = $processor->process($stepConfig['title'], $context);
             }
+
             if (isset($stepConfig['description'])) {
                 $step['config']['description'] = $processor->process($stepConfig['description'], $context);
             }
-            
-            // Process fields for 'form' handler
-            if ($stepConfig['handler'] === 'form' && isset($stepConfig['fields'])) {
+
+            if (($stepConfig['handler'] ?? null) === 'form' && isset($stepConfig['fields'])) {
                 $step['config']['fields'] = $this->processFields($stepConfig['fields'], $context);
             }
-            
-            // Process config section
+
             if (isset($stepConfig['config'])) {
                 $step['config'] = array_merge(
                     $step['config'],
                     $processor->processArray($stepConfig['config'], $context)
                 );
             }
-            
-            // Only add step if it has fields (for form handler) or is not a form handler
-            if ($step['handler'] !== 'form' || !empty($step['config']['fields'])) {
+
+            if ($step['handler'] !== 'form' || ! empty($step['config']['fields'])) {
                 $steps[] = $step;
             }
         }
-        
+
         return $steps;
     }
-    
-    /**
-     * Process fields array with conditions
-     */
+
     protected function processFields(array $fields, array $context): array
     {
         $processor = $this->getTemplateProcessor();
         $processedFields = [];
-        
+
         foreach ($fields as $field) {
-            // Check field condition (if specified)
             if (isset($field['condition'])) {
                 $conditionResult = $processor->process($field['condition'], $context);
-                if (!$this->evaluateCondition($conditionResult)) {
-                    continue; // Skip this field
+
+                if (! $this->evaluateCondition($conditionResult)) {
+                    continue;
                 }
             }
-            
-            // Remove condition from field config (not needed in output)
+
             $fieldCopy = $field;
             unset($fieldCopy['condition']);
-            
-            // Process field templates
+
             $processedField = $processor->processArray($fieldCopy, $context);
-
-            foreach (['persist', 'readonly', 'required'] as $booleanKey) {
-                if (array_key_exists($booleanKey, $processedField)) {
-                    $value = $processedField[$booleanKey];
-
-                    if ($value === 'true') {
-                        $processedField[$booleanKey] = true;
-                    }
-
-                    if ($value === 'false') {
-                        $processedField[$booleanKey] = false;
-                    }
-                }
-            }
-
-            $processedFields[] = $processedField;
+            $processedFields[] = $this->normalizeFieldTypes($processedField);
         }
-        
+
         return $processedFields;
     }
-    
-    /**
-     * Evaluate a condition result
-     */
+
+    protected function normalizeFieldTypes(array $field): array
+    {
+        foreach (['persist', 'readonly', 'required', 'disabled'] as $booleanKey) {
+            if (! array_key_exists($booleanKey, $field)) {
+                continue;
+            }
+
+            $value = $field[$booleanKey];
+
+            if (is_bool($value)) {
+                continue;
+            }
+
+            if (! is_string($value)) {
+                continue;
+            }
+
+            $normalized = strtolower(trim($value));
+
+            if ($normalized === 'true') {
+                $field[$booleanKey] = true;
+            }
+
+            if ($normalized === 'false' || $normalized === '') {
+                $field[$booleanKey] = false;
+            }
+        }
+
+        return $field;
+    }
+
     protected function evaluateCondition(string $result): bool
     {
         $result = trim($result);
-        
-        // Empty string or 'false' = false
+
         if ($result === '' || $result === 'false' || $result === '0') {
             return false;
         }
-        
-        // 'true' or any non-empty string = true
+
         return true;
     }
-    
-    /**
-     * Check if handler is available
-     */
+
     protected function isHandlerAvailable(string $handlerName): bool
     {
         $handlerClass = $this->getHandlerClass($handlerName);
+
         return $handlerClass && class_exists($handlerClass);
     }
-    
-    /**
-     * Get handler class from name
-     */
+
     protected function getHandlerClass(string $handlerName): ?string
     {
-        // Reuse FormFlowController's logic
         $configHandlers = config('form-flow.handlers', []);
+
         $builtInHandlers = [
             'form' => \LBHurtado\FormFlowManager\Handlers\FormHandler::class,
             'missing' => \LBHurtado\FormFlowManager\Handlers\MissingHandler::class,
         ];
+
         $handlers = array_merge($builtInHandlers, $configHandlers);
+
         return $handlers[$handlerName] ?? null;
     }
-    
-    /**
-     * Create fallback step for missing handler
-     */
+
     protected function createMissingHandlerStep(
         string $handlerName,
         string $title,
@@ -329,21 +313,17 @@ class DriverService
             'original_config' => $originalConfig,
             'install_hint' => $this->getInstallHint($handlerName),
         ];
-        
-        // Preserve step_name if present
+
         if (isset($originalConfig['step_name'])) {
             $config['step_name'] = $originalConfig['step_name'];
         }
-        
+
         return [
             'handler' => 'missing',
             'config' => $config,
         ];
     }
-    
-    /**
-     * Get installation hint for handler
-     */
+
     protected function getInstallHint(string $handlerName): string
     {
         $packageMap = [
@@ -353,8 +333,9 @@ class DriverService
             'signature' => 'lbhurtado/form-handler-signature',
             'selfie' => 'lbhurtado/form-handler-selfie',
         ];
-        
+
         $package = $packageMap[$handlerName] ?? "lbhurtado/form-handler-{$handlerName}";
+
         return "composer require {$package}";
     }
 }
