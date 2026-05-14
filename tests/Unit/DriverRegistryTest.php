@@ -4,8 +4,6 @@ use LBHurtado\FormFlowManager\Services\DriverRegistry;
 use LBHurtado\FormFlowManager\Data\DriverConfigData;
 use Illuminate\Support\Facades\File;
 
-uses(Tests\TestCase::class);
-
 beforeEach(function () {
     $this->registry = new DriverRegistry();
 });

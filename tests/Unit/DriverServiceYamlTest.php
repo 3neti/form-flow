@@ -8,8 +8,6 @@ use LBHurtado\Voucher\Actions\GenerateVouchers;
 use LBHurtado\Voucher\Data\VoucherInstructionsData;
 use LBHurtado\PaymentGateway\Enums\SettlementRail;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
-
 // Helper function to create mock voucher
 function createMockVoucher(string $code, array $fields): Voucher {
     $user = new User(['id' => 1, 'name' => 'Test User', 'email' => 'test@example.com']);

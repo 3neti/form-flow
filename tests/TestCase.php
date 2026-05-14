@@ -17,7 +17,7 @@ abstract class TestCase extends BaseTestCase
             \Spatie\LaravelData\LaravelDataServiceProvider::class,
             \Inertia\ServiceProvider::class,
             \LBHurtado\FormFlowManager\FormFlowServiceProvider::class,
-            \LBHurtado\FormHandlerLocation\LocationHandlerServiceProvider::class,
+//            \LBHurtado\FormHandlerLocation\LocationHandlerServiceProvider::class,
         ];
     }
 
