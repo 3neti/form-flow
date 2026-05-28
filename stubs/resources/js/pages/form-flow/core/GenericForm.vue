@@ -415,6 +415,15 @@ function getFieldLabel(field: FieldDefinition): string {
 function getFieldPlaceholder(field: FieldDefinition): string {
     return field.placeholder || `Enter ${getFieldLabel(field).toLowerCase()}`;
 }
+
+if (import.meta.env.DEV && props.claim_experience) {
+  console.debug('[form-flow] claim experience', {
+    mode: props.claim_experience?.entry?.mode,
+    skip_consumed_splash: props.claim_experience?.options?.skip_consumed_splash,
+    splash_owner: props.claim_experience?.diagnostics?.splash_owner,
+    form_flow_splash_policy: props.claim_experience?.diagnostics?.form_flow_splash_policy,
+  });
+}
 </script>
 
 <template>
