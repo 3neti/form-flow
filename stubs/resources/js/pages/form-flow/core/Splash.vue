@@ -22,6 +22,7 @@ interface Props {
     app_logo?: string;
     app_author?: string;
     copyright_text?: string;
+    claim_experience?: Record<string, unknown> | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -34,6 +35,7 @@ const props = withDefaults(defineProps<Props>(), {
     app_logo: undefined,
     app_author: undefined,
     copyright_text: undefined,
+    claim_experience: undefined,
 });
 
 // Coerce timeout to number (env values may arrive as strings)

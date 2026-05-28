@@ -140,6 +140,7 @@ class FormFlowController extends Controller
                 'flow_id' => $flowId,
                 'state' => $state,
                 'callback_triggered' => $callbackUrl !== null,
+                'claim_experience' => $this->claimExperience($state),
             ]);
         }
         
@@ -166,6 +167,7 @@ class FormFlowController extends Controller
             'flow_id' => $flowId,
             'step_index' => $currentStepIndex,
             'collected_data' => $state['collected_data'] ?? [],
+            'claim_experience' => $this->claimExperience($state),
         ]);
     }
     
@@ -382,5 +384,10 @@ class FormFlowController extends Controller
         $handlers = array_merge($builtInHandlers, $configHandlers);
         
         return $handlers[$handlerName] ?? null;
+    }
+
+    private function claimExperience(array $state): ?array
+    {
+        return data_get($state, 'instructions.metadata.claim_experience');
     }
 }

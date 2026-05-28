@@ -20,6 +20,7 @@ interface Props {
         completed_at: string;
     };
     callback_triggered: boolean;
+    claim_experience?: Record<string, unknown> | null;
 }
 
 const props = defineProps<Props>();

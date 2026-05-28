@@ -63,6 +63,7 @@ interface Props {
     description?: string;
     fields: FieldDefinition[];
     auto_sync?: AutoSyncConfig;
+    claim_experience?: Record<string, unknown> | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -70,6 +71,7 @@ const props = withDefaults(defineProps<Props>(), {
     title: 'Form',
     description: undefined,
     auto_sync: undefined,
+    claim_experience: undefined,
 });
 
 // Form state
