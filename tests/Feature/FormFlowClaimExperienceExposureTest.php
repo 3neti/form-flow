@@ -236,3 +236,108 @@ it('marks splash step as duplicate candidate when claim splash was already consu
             ->where('claim_experience_warnings.0', 'duplicate_splash_candidate')
         );
 });
+
+it('does not skip duplicate splash candidate by default', function () {
+    config()->set('form-flow.claim_experience.skip_consumed_splash', false);
+
+    $referenceId = 'claim-experience-no-skip-splash-'.uniqid();
+
+    $createResponse = $this->postJson('/form-flow/start', [
+        'reference_id' => $referenceId,
+        'steps' => [
+            [
+                'handler' => 'splash',
+                'config' => [
+                    'title' => 'Welcome',
+                    'content' => '<h1>Welcome</h1>',
+                    'timeout' => 0,
+                ],
+            ],
+            [
+                'handler' => 'form',
+                'config' => [
+                    'title' => 'Wallet Information',
+                    'fields' => [
+                        [
+                            'name' => 'mobile',
+                            'type' => 'text',
+                            'label' => 'Mobile Number',
+                            'required' => true,
+                        ],
+                    ],
+                ],
+            ],
+        ],
+        'callbacks' => [
+            'on_complete' => 'https://example.com/callback',
+        ],
+        'metadata' => [
+            'claim_experience' => claimExperienceFixture(),
+        ],
+    ]);
+
+    $createResponse->assertSuccessful();
+
+    $this->get($createResponse->json('flow_url'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('form-flow/core/Splash')
+            ->where('claim_experience_warnings.0', 'duplicate_splash_candidate')
+        );
+});
+
+it('skips consumed splash when skip consumed splash is enabled', function () {
+    config()->set('form-flow.claim_experience.skip_consumed_splash', true);
+
+    $referenceId = 'claim-experience-skip-splash-'.uniqid();
+
+    $createResponse = $this->postJson('/form-flow/start', [
+        'reference_id' => $referenceId,
+        'steps' => [
+            [
+                'handler' => 'splash',
+                'config' => [
+                    'title' => 'Welcome',
+                    'content' => '<h1>Welcome</h1>',
+                    'timeout' => 0,
+                    'step_name' => 'intro_splash',
+                ],
+            ],
+            [
+                'handler' => 'form',
+                'config' => [
+                    'title' => 'Wallet Information',
+                    'fields' => [
+                        [
+                            'name' => 'mobile',
+                            'type' => 'text',
+                            'label' => 'Mobile Number',
+                            'required' => true,
+                        ],
+                    ],
+                ],
+            ],
+        ],
+        'callbacks' => [
+            'on_complete' => 'https://example.com/callback',
+        ],
+        'metadata' => [
+            'claim_experience' => claimExperienceFixture(),
+        ],
+    ]);
+
+    $createResponse->assertSuccessful();
+
+    $response = $this->get($createResponse->json('flow_url'));
+
+    $response->assertRedirect();
+
+    $this->followingRedirects()
+        ->get($createResponse->json('flow_url'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('form-flow/core/GenericForm')
+            ->where('claim_experience.version', 1)
+            ->where('claim_experience.consumed.splash', true)
+        );
+});

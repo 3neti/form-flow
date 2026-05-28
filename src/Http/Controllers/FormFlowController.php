@@ -146,7 +146,23 @@ class FormFlowController extends Controller
         
         // Otherwise, render the current step's handler view
         $stepData = FormFlowStepData::from($state['instructions']['steps'][$currentStepIndex]);
-        
+
+        if ($this->shouldSkipConsumedSplash($state, $stepData)) {
+            $stepName = $stepData->config['step_name'] ?? 'splash';
+
+            $this->flowService->updateStepData(
+                $flowId,
+                $currentStepIndex,
+                [
+                    '_skipped' => true,
+                    '_skip_reason' => 'duplicate_splash_candidate',
+                ],
+                $stepName
+            );
+
+            return redirect()->route('form-flow.show', ['flow_id' => $flowId]);
+        }
+
         // Get the handler by name
         $handlerClass = $this->getHandlerClass($stepData->handler);
         
@@ -388,6 +404,20 @@ class FormFlowController extends Controller
 
     private function claimExperience(array $state): ?array
     {
-        return data_get($state, 'instructions.metadata.claim_experience');
+        return data_get($state, 'instructions.metadata.claim_experience')
+            ?? data_get($state, 'metadata.claim_experience');
+    }
+
+    private function shouldSkipConsumedSplash(array $state, FormFlowStepData $stepData): bool
+    {
+        if (! config('form-flow.claim_experience.skip_consumed_splash', false)) {
+            return false;
+        }
+
+        if ($stepData->handler !== 'splash') {
+            return false;
+        }
+
+        return (bool) data_get($this->claimExperience($state), 'consumed.splash', false);
     }
 }

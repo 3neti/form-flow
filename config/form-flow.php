@@ -58,4 +58,8 @@ return [
         'missing' => \LBHurtado\FormFlowManager\Handlers\MissingHandler::class,
         // Plugin handlers register themselves via service providers
     ],
+
+    'claim_experience' => [
+        'skip_consumed_splash' => env('FORM_FLOW_SKIP_CONSUMED_SPLASH', false),
+    ],
 ];
