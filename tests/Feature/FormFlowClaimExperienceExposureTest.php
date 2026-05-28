@@ -341,3 +341,64 @@ it('skips consumed splash when skip consumed splash is enabled', function () {
             ->where('claim_experience.consumed.splash', true)
         );
 });
+
+it('skips consumed splash when claim experience opts in per flow', function () {
+    config()->set('form-flow.claim_experience.skip_consumed_splash', false);
+
+    $referenceId = 'claim-experience-per-flow-skip-splash-'.uniqid();
+
+    $experience = claimExperienceFixture();
+    $experience['options'] = [
+        'skip_consumed_splash' => true,
+    ];
+
+    $createResponse = $this->postJson('/form-flow/start', [
+        'reference_id' => $referenceId,
+        'steps' => [
+            [
+                'handler' => 'splash',
+                'config' => [
+                    'title' => 'Welcome',
+                    'content' => '<h1>Welcome</h1>',
+                    'timeout' => 0,
+                    'step_name' => 'intro_splash',
+                ],
+            ],
+            [
+                'handler' => 'form',
+                'config' => [
+                    'title' => 'Wallet Information',
+                    'fields' => [
+                        [
+                            'name' => 'mobile',
+                            'type' => 'text',
+                            'label' => 'Mobile Number',
+                            'required' => true,
+                        ],
+                    ],
+                ],
+            ],
+        ],
+        'callbacks' => [
+            'on_complete' => 'https://example.com/callback',
+        ],
+        'metadata' => [
+            'claim_experience' => $experience,
+        ],
+    ]);
+
+    $createResponse->assertSuccessful();
+
+    $this->get($createResponse->json('flow_url'))
+        ->assertRedirect();
+
+    $this->followingRedirects()
+        ->get($createResponse->json('flow_url'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('form-flow/core/GenericForm')
+            ->where('claim_experience.version', 1)
+            ->where('claim_experience.options.skip_consumed_splash', true)
+            ->where('claim_experience.consumed.splash', true)
+        );
+});

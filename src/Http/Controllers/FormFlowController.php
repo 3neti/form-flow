@@ -410,7 +410,13 @@ class FormFlowController extends Controller
 
     private function shouldSkipConsumedSplash(array $state, FormFlowStepData $stepData): bool
     {
-        if (! config('form-flow.claim_experience.skip_consumed_splash', false)) {
+        $skipEnabled = (bool) (
+            data_get($state, 'instructions.metadata.claim_experience.options.skip_consumed_splash')
+            ?? data_get($state, 'metadata.claim_experience.options.skip_consumed_splash')
+            ?? config('form-flow.claim_experience.skip_consumed_splash', false)
+        );
+
+        if (! $skipEnabled) {
             return false;
         }
 
