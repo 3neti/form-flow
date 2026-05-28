@@ -80,15 +80,16 @@ class FormHandler implements FormHandlerInterface
         $title = $resolvedConfig['title'] ?? 'Form';
         $description = $resolvedConfig['description'] ?? null;
         $autoSync = $resolvedConfig['auto_sync'] ?? null;
-        
+
         return Inertia::render('form-flow/core/GenericForm', [
             'flow_id' => $context['flow_id'] ?? null,
             'step_index' => $context['step_index'] ?? 0,
-        'step_name' => $resolvedConfig['step_name'] ?? null,
+            'step_name' => $resolvedConfig['step_name'] ?? null,
             'title' => $title,
             'description' => $description,
             'fields' => $fields,
             'auto_sync' => $autoSync,
+            'claim_experience' => $context['claim_experience'] ?? null,
         ]);
     }
     
