@@ -188,3 +188,51 @@ it('passes claim experience to the splash step page', function () {
             ->where('claim_experience.diagnostics.duplicate_splash_prevented', true)
         );
 });
+
+it('marks splash step as duplicate candidate when claim splash was already consumed', function () {
+    $referenceId = 'claim-experience-duplicate-splash-'.uniqid();
+
+    $createResponse = $this->postJson('/form-flow/start', [
+        'reference_id' => $referenceId,
+        'steps' => [
+            [
+                'handler' => 'splash',
+                'config' => [
+                    'title' => 'Welcome',
+                    'content' => '<h1>Welcome</h1>',
+                    'timeout' => 0,
+                ],
+            ],
+        ],
+        'callbacks' => [
+            'on_complete' => 'https://example.com/callback',
+        ],
+        'metadata' => [
+            'claim_experience' => [
+                'version' => 1,
+                'entry' => [
+                    'mode' => 'rider_first',
+                    'initial_phase' => 'rider_intro',
+                ],
+                'phases' => [],
+                'consumed' => [
+                    'splash' => true,
+                ],
+                'diagnostics' => [
+                    'duplicate_splash_prevented' => true,
+                ],
+            ],
+        ],
+    ]);
+
+    $createResponse->assertSuccessful();
+
+    $this->get($createResponse->json('flow_url'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('form-flow/core/Splash')
+            ->where('claim_experience.version', 1)
+            ->where('claim_experience.consumed.splash', true)
+            ->where('claim_experience_warnings.0', 'duplicate_splash_candidate')
+        );
+});

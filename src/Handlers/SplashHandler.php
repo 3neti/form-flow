@@ -58,7 +58,10 @@ class SplashHandler implements FormHandlerInterface
         
         // Extract voucher code from config or context
         $voucherCode = $step->config['voucher_code'] ?? $context['voucher_code'] ?? $context['code'] ?? null;
-        
+
+        $claimExperience = $context['claim_experience'] ?? null;
+        $splashAlreadyConsumed = (bool) data_get($claimExperience, 'consumed.splash', false);
+
         $props = [
             'flow_id' => $context['flow_id'] ?? null,
             'step_index' => $context['step_index'] ?? 0,
@@ -66,6 +69,9 @@ class SplashHandler implements FormHandlerInterface
             'timeout' => $timeout,
             'button_label' => config('splash.button_label', 'Continue Now'),
             'claim_experience' => $context['claim_experience'] ?? null,
+            'claim_experience_warnings' => array_values(array_filter([
+                $splashAlreadyConsumed ? 'duplicate_splash_candidate' : null,
+            ])),
         ];
         
         // When no custom content and no config override, pass structured props
