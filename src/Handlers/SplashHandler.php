@@ -65,6 +65,7 @@ class SplashHandler implements FormHandlerInterface
             'title' => $title,
             'timeout' => $timeout,
             'button_label' => config('splash.button_label', 'Continue Now'),
+            'claim_experience' => $context['claim_experience'] ?? null,
         ];
         
         // When no custom content and no config override, pass structured props
