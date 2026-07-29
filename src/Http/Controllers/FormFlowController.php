@@ -141,6 +141,7 @@ class FormFlowController extends Controller
                 'state' => $state,
                 'callback_triggered' => $callbackUrl !== null,
                 'claim_experience' => $this->claimExperience($state),
+                'claim_workflow' => $this->claimWorkflow($state),
             ]);
         }
         
@@ -406,6 +407,18 @@ class FormFlowController extends Controller
     {
         return data_get($state, 'instructions.metadata.claim_experience')
             ?? data_get($state, 'metadata.claim_experience');
+    }
+
+    /**
+     * @param  array<string, mixed>  $state
+     * @return array<string, mixed>|null
+     */
+    private function claimWorkflow(array $state): ?array
+    {
+        $workflow = data_get($state, 'instructions.metadata.claim_workflow')
+            ?? data_get($state, 'metadata.claim_workflow');
+
+        return is_array($workflow) ? $workflow : null;
     }
 
     private function shouldSkipConsumedSplash(array $state, FormFlowStepData $stepData): bool

@@ -152,6 +152,57 @@ it('passes claim experience to the complete page', function () {
         );
 });
 
+it('passes an optional claim workflow confirmation label to the complete page', function () {
+    Http::fake();
+
+    $referenceId = 'claim-workflow-complete-'.uniqid();
+
+    $createResponse = $this->postJson('/form-flow/start', [
+        'reference_id' => $referenceId,
+        'steps' => [
+            [
+                'handler' => 'form',
+                'config' => [
+                    'title' => 'Campaign Officer Authorization',
+                    'fields' => [
+                        [
+                            'name' => 'mobile',
+                            'type' => 'text',
+                            'label' => 'Mobile Number',
+                            'required' => true,
+                        ],
+                    ],
+                ],
+            ],
+        ],
+        'callbacks' => [
+            'on_complete' => 'https://example.com/callback',
+        ],
+        'metadata' => [
+            'claim_workflow' => [
+                'confirmation_label' => 'Authorize Campaign',
+            ],
+        ],
+    ]);
+
+    $createResponse->assertSuccessful();
+
+    $service = app(FormFlowService::class);
+    $state = $service->getFlowStateByReference($referenceId);
+    $flowId = $state['flow_id'];
+
+    $service->updateStepData($flowId, 0, [
+        'mobile' => '639171234567',
+    ]);
+
+    $this->get("/form-flow/{$flowId}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('form-flow/core/Complete')
+            ->where('claim_workflow.confirmation_label', 'Authorize Campaign')
+        );
+});
+
 it('passes claim experience to the splash step page', function () {
     $referenceId = 'claim-experience-splash-'.uniqid();
 

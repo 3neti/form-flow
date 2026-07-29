@@ -21,9 +21,16 @@ interface Props {
     };
     callback_triggered: boolean;
     claim_experience?: Record<string, unknown> | null;
+    claim_workflow?: {
+        confirmation_label?: string;
+    } | null;
 }
 
 const props = defineProps<Props>();
+
+const confirmationLabel = computed(() =>
+    props.claim_workflow?.confirmation_label || 'Confirm Redemption',
+);
 
 // Processing state
 const isProcessing = ref(false);
@@ -243,7 +250,7 @@ if (import.meta.env.DEV && props.claim_experience) {
                     :disabled="isProcessing"
                     class="w-full rounded-full"
                 >
-                    Confirm Redemption
+                    {{ confirmationLabel }}
                 </Button>
 
                 <!-- Reference ID: subtle footer -->
