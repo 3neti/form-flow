@@ -99,6 +99,49 @@ it('passes claim experience to the active step page', function () {
         );
 });
 
+it('passes claim workflow metadata from step config to the active step page', function () {
+    $referenceId = 'claim-workflow-active-'.uniqid();
+
+    $createResponse = $this->postJson('/form-flow/start', [
+        'reference_id' => $referenceId,
+        'steps' => [
+            [
+                'handler' => 'form',
+                'config' => [
+                    'title' => 'Campaign Officer Authorization',
+                    'claim_workflow' => [
+                        'key' => 'campaign.officer-authorization.v1',
+                        'title' => 'Campaign Officer Authorization',
+                        'confirmation_label' => 'Authorize Campaign',
+                    ],
+                    'fields' => [
+                        [
+                            'name' => 'mobile',
+                            'type' => 'text',
+                            'label' => 'Mobile Number',
+                            'required' => true,
+                        ],
+                    ],
+                ],
+            ],
+        ],
+        'callbacks' => [
+            'on_complete' => 'https://example.com/callback',
+        ],
+    ]);
+
+    $createResponse->assertSuccessful();
+
+    $this->get($createResponse->json('flow_url'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('form-flow/core/GenericForm')
+            ->where('claim_workflow.key', 'campaign.officer-authorization.v1')
+            ->where('claim_workflow.title', 'Campaign Officer Authorization')
+            ->where('claim_workflow.confirmation_label', 'Authorize Campaign')
+        );
+});
+
 it('passes claim experience to the complete page', function () {
     Http::fake();
 

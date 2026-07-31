@@ -188,7 +188,7 @@ test('resolves variables in min, max, step properties', function () {
 /**
  * Test 8: Handles unresolved variables gracefully
  */
-test('leaves unresolved variables as-is', function () {
+test('clears unresolved variables', function () {
     $config = [
         'variables' => [
             '$defined' => 'value',
@@ -202,7 +202,7 @@ test('leaves unresolved variables as-is', function () {
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
     
     expect($resolved['fields'][0]['default'])->toBe('value');
-    expect($resolved['fields'][1]['default'])->toBe('$undefined'); // Unchanged
+    expect($resolved['fields'][1]['default'])->toBeNull();
 });
 
 /**
@@ -328,7 +328,7 @@ test('resolves placeholder variable references', function () {
 /**
  * Test 15: Handles circular reference prevention (max depth)
  */
-test('prevents infinite loops with circular references', function () {
+test('clears circular references after preventing infinite loops', function () {
     $config = [
         'variables' => [
             '$var1' => '$var2',
@@ -341,9 +341,7 @@ test('prevents infinite loops with circular references', function () {
     
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
     
-    // Should stop after max depth (10) and leave as reference
-    expect($resolved['fields'][0]['default'])->toBeString();
-    expect($resolved['fields'][0]['default'])->toStartWith('$');
+    expect($resolved['fields'][0]['default'])->toBeNull();
 });
 
 /**

@@ -1,5 +1,7 @@
 <?php
 
+use LBHurtado\FormFlowManager\Handlers\MissingHandler;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -55,11 +57,25 @@ return [
     |
     */
     'handlers' => [
-        'missing' => \LBHurtado\FormFlowManager\Handlers\MissingHandler::class,
+        'missing' => MissingHandler::class,
         // Plugin handlers register themselves via service providers
     ],
 
     'claim_experience' => [
         'skip_consumed_splash' => env('FORM_FLOW_SKIP_CONSUMED_SPLASH', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | UI
+    |--------------------------------------------------------------------------
+    |
+    | The default form-flow shell variant. Keep "default" as the stable
+    | production presentation. "compact" and "immersive" are safe layout
+    | variants that reuse the same driver components.
+    |
+    */
+    'ui' => [
+        'variant' => env('FORM_FLOW_UI_VARIANT', 'default'),
     ],
 ];

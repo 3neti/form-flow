@@ -1,12 +1,24 @@
 <?php
 
+use Inertia\Response as InertiaResponse;
+use LBHurtado\FormFlowManager\Data\FormFlowStepData;
+use LBHurtado\FormFlowManager\Handlers\FormHandler;
 use LBHurtado\FormFlowManager\Services\FormFlowService;
+
+function formHandlerInertiaProps(InertiaResponse $response): array
+{
+    $reflection = new ReflectionClass($response);
+    $property = $reflection->getProperty('props');
+    $property->setAccessible(true);
+
+    return $property->getValue($response);
+}
 
 /**
  * ============================================================================
  * Test Built-in Form Handler for Basic Inputs
  * ============================================================================
- * 
+ *
  * When no specialized plugin exists (location, selfie, signature, kyc),
  * the form-flow-manager should use its built-in FormHandler to collect
  * basic inputs like name, address, birthdate, etc.
@@ -17,7 +29,7 @@ use LBHurtado\FormFlowManager\Services\FormFlowService;
  */
 test('form handler accepts basic text inputs', function () {
     $response = $this->postJson('/form-flow/start', [
-        'reference_id' => 'ref-basic-' . uniqid(),
+        'reference_id' => 'ref-basic-'.uniqid(),
         'steps' => [
             [
                 'handler' => 'form',
@@ -33,7 +45,7 @@ test('form handler accepts basic text inputs', function () {
             'on_complete' => 'https://example.com/callback',
         ],
     ]);
-    
+
     $response->assertSuccessful();
     $response->assertJson(['success' => true]);
 });
@@ -43,7 +55,7 @@ test('form handler accepts basic text inputs', function () {
  */
 test('form handler supports multiple input types', function () {
     $response = $this->postJson('/form-flow/start', [
-        'reference_id' => 'ref-types-' . uniqid(),
+        'reference_id' => 'ref-types-'.uniqid(),
         'steps' => [
             [
                 'handler' => 'form',
@@ -63,7 +75,7 @@ test('form handler supports multiple input types', function () {
             'on_complete' => 'https://example.com/callback',
         ],
     ]);
-    
+
     $response->assertSuccessful();
 });
 
@@ -72,7 +84,7 @@ test('form handler supports multiple input types', function () {
  */
 test('flow can mix form handler with specialized handlers', function () {
     $response = $this->postJson('/form-flow/start', [
-        'reference_id' => 'ref-mixed-' . uniqid(),
+        'reference_id' => 'ref-mixed-'.uniqid(),
         'steps' => [
             // Step 1: Basic form inputs
             [
@@ -96,7 +108,7 @@ test('flow can mix form handler with specialized handlers', function () {
             'on_complete' => 'https://example.com/callback',
         ],
     ]);
-    
+
     $response->assertSuccessful();
     $response->assertJsonStructure(['success', 'reference_id', 'flow_url']);
 });
@@ -105,8 +117,8 @@ test('flow can mix form handler with specialized handlers', function () {
  * Test 4: Form handler renders a generic form page
  */
 test('form handler renders generic form UI', function () {
-    $referenceId = 'ref-render-' . uniqid();
-    
+    $referenceId = 'ref-render-'.uniqid();
+
     // Create flow with form handler
     $createResponse = $this->postJson('/form-flow/start', [
         'reference_id' => $referenceId,
@@ -127,24 +139,71 @@ test('form handler renders generic form UI', function () {
             'on_complete' => 'https://example.com/callback',
         ],
     ]);
-    
+
     $createResponse->assertSuccessful();
     $flowUrl = $createResponse->json('flow_url');
-    
+
     // Access the flow URL
     $accessResponse = $this->get($flowUrl);
-    
+
     // Should render successfully
     expect($accessResponse->status())->not->toBe(404);
     expect($accessResponse->headers->get('content-type'))->toContain('text/html');
+});
+
+test('form handler exposes configured default ui variant to generic form UI', function () {
+    config()->set('form-flow.ui.variant', 'compact');
+
+    $response = app(FormHandler::class)->render(
+        FormFlowStepData::from([
+            'handler' => 'form',
+            'config' => [
+                'fields' => [
+                    ['name' => 'mobile', 'type' => 'text', 'required' => true],
+                ],
+            ],
+        ]),
+        [
+            'flow_id' => 'flow-ui-default',
+            'step_index' => 0,
+            'collected_data' => [],
+        ],
+    );
+
+    expect($response)->toBeInstanceOf(InertiaResponse::class)
+        ->and(formHandlerInertiaProps($response)['ui_variant'])->toBe('compact');
+});
+
+test('form handler allows step config to override ui variant', function () {
+    config()->set('form-flow.ui.variant', 'default');
+
+    $response = app(FormHandler::class)->render(
+        FormFlowStepData::from([
+            'handler' => 'form',
+            'config' => [
+                'ui_variant' => 'immersive',
+                'fields' => [
+                    ['name' => 'mobile', 'type' => 'text', 'required' => true],
+                ],
+            ],
+        ]),
+        [
+            'flow_id' => 'flow-ui-override',
+            'step_index' => 0,
+            'collected_data' => [],
+        ],
+    );
+
+    expect($response)->toBeInstanceOf(InertiaResponse::class)
+        ->and(formHandlerInertiaProps($response)['ui_variant'])->toBe('immersive');
 });
 
 /**
  * Test 5: Form handler accepts and stores submitted data
  */
 test('form handler accepts form submission', function () {
-    $referenceId = 'ref-submit-' . uniqid();
-    
+    $referenceId = 'ref-submit-'.uniqid();
+
     // Create flow
     $this->postJson('/form-flow/start', [
         'reference_id' => $referenceId,
@@ -163,12 +222,12 @@ test('form handler accepts form submission', function () {
             'on_complete' => 'https://example.com/callback',
         ],
     ]);
-    
+
     // Get flow_id from reference
     $service = app(FormFlowService::class);
     $state = $service->getFlowStateByReference($referenceId);
     $flowId = $state['flow_id'];
-    
+
     // Submit form data
     $submitResponse = $this->postJson("/form-flow/{$flowId}/step/0", [
         'data' => [
@@ -176,9 +235,9 @@ test('form handler accepts form submission', function () {
             'email' => 'juan@example.com',
         ],
     ]);
-    
+
     $submitResponse->assertSuccessful();
-    
+
     // Verify data is stored
     $finalState = $service->getFlowStateByReference($referenceId);
     expect($finalState['collected_data'][0])->toHaveKeys(['name', 'email']);
@@ -189,8 +248,8 @@ test('form handler accepts form submission', function () {
  * Test 6: Form handler validates required fields
  */
 test('form handler validates required fields', function () {
-    $referenceId = 'ref-validate-' . uniqid();
-    
+    $referenceId = 'ref-validate-'.uniqid();
+
     // Create flow
     $this->postJson('/form-flow/start', [
         'reference_id' => $referenceId,
@@ -209,12 +268,12 @@ test('form handler validates required fields', function () {
             'on_complete' => 'https://example.com/callback',
         ],
     ]);
-    
+
     // Get flow_id
     $service = app(FormFlowService::class);
     $state = $service->getFlowStateByReference($referenceId);
     $flowId = $state['flow_id'];
-    
+
     // Submit incomplete data
     $submitResponse = $this->postJson("/form-flow/{$flowId}/step/0", [
         'data' => [
@@ -222,7 +281,7 @@ test('form handler validates required fields', function () {
             // Missing required 'email' field
         ],
     ]);
-    
+
     // Should fail validation
     $submitResponse->assertStatus(422);
     $submitResponse->assertJsonValidationErrors(['data.email']);
@@ -233,7 +292,7 @@ test('form handler validates required fields', function () {
  */
 test('fallback to form handler when plugin does not exist', function () {
     $response = $this->postJson('/form-flow/start', [
-        'reference_id' => 'ref-fallback-' . uniqid(),
+        'reference_id' => 'ref-fallback-'.uniqid(),
         'steps' => [
             // Step 1: Name and address (basic form)
             [
@@ -254,9 +313,9 @@ test('fallback to form handler when plugin does not exist', function () {
             'on_complete' => 'https://example.com/callback',
         ],
     ]);
-    
+
     $response->assertSuccessful();
-    
+
     // When accessing the flow, if selfie handler doesn't exist,
     // it should render a generic form with file upload instruction
     // This will be handled by FormFlowController's handler resolution
@@ -267,7 +326,7 @@ test('fallback to form handler when plugin does not exist', function () {
  */
 test('form handler supports validation rules', function () {
     $response = $this->postJson('/form-flow/start', [
-        'reference_id' => 'ref-rules-' . uniqid(),
+        'reference_id' => 'ref-rules-'.uniqid(),
         'steps' => [
             [
                 'handler' => 'form',
@@ -293,6 +352,6 @@ test('form handler supports validation rules', function () {
             'on_complete' => 'https://example.com/callback',
         ],
     ]);
-    
+
     $response->assertSuccessful();
 });
