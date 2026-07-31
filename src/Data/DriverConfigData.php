@@ -8,7 +8,7 @@ use Spatie\LaravelData\Data;
 
 /**
  * Driver configuration schema (DirXML-style)
- * 
+ *
  * Represents a declarative mapping configuration for transforming
  * domain-specific data structures into generic form flow instructions.
  */
@@ -17,18 +17,18 @@ class DriverConfigData extends Data
     public function __construct(
         /** Driver name (e.g., 'voucher-redemption') */
         public string $name,
-        
+
         /** Driver version (semantic versioning) */
         public string $version,
-        
+
         /** Source class FQCN (e.g., 'LBHurtado\Voucher\Data\VoucherInstructionsData') */
         public string $source,
-        
+
         /** Target class FQCN (e.g., 'LBHurtado\FormFlowManager\Data\FormFlowInstructionsData') */
         public string $target,
-        
-        /** 
-         * Field mapping rules 
+
+        /**
+         * Field mapping rules
          * Structure:
          * [
          *   'field_name' => [
@@ -41,8 +41,8 @@ class DriverConfigData extends Data
          * ]
          */
         public array $mappings,
-        
-        /** 
+
+        /**
          * Constant values accessible in templates
          * Structure:
          * [
@@ -51,8 +51,8 @@ class DriverConfigData extends Data
          * ]
          */
         public ?array $constants = null,
-        
-        /** 
+
+        /**
          * Filtering rules
          * Structure:
          * [
@@ -62,7 +62,7 @@ class DriverConfigData extends Data
          */
         public ?array $filters = null,
     ) {}
-    
+
     /**
      * Get a constant value by key
      */
@@ -70,15 +70,15 @@ class DriverConfigData extends Data
     {
         return data_get($this->constants, $key, $default);
     }
-    
+
     /**
      * Check if driver has filters defined
      */
     public function hasFilters(): bool
     {
-        return !empty($this->filters);
+        return ! empty($this->filters);
     }
-    
+
     /**
      * Get mapping for a specific field
      */

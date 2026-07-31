@@ -1,13 +1,12 @@
 <?php
 
 use LBHurtado\FormFlowManager\Handlers\FormHandler;
-use LBHurtado\FormFlowManager\Data\FormFlowStepData;
 
 /**
  * ============================================================================
  * Unit Tests for Variable Resolution in FormHandler
  * ============================================================================
- * 
+ *
  * Tests the resolveVariables() method for:
  * - Simple variable substitution
  * - Nested variable references
@@ -15,12 +14,11 @@ use LBHurtado\FormFlowManager\Data\FormFlowStepData;
  * - Type preservation (string, int, float, bool)
  * - Collected data auto-population (Phase 2)
  */
-
 beforeEach(function () {
-    $this->handler = new FormHandler();
-    
+    $this->handler = new FormHandler;
+
     // Create reflection method to access protected resolveVariables()
-    $reflection = new \ReflectionClass($this->handler);
+    $reflection = new ReflectionClass($this->handler);
     $this->resolveVariables = $reflection->getMethod('resolveVariables');
     $this->resolveVariables->setAccessible(true);
 });
@@ -39,9 +37,9 @@ test('resolves simple variable references', function () {
             ['name' => 'amount', 'default' => '$amount'],
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['default'])->toBe('PH');
     expect($resolved['fields'][1]['default'])->toBe(100);
     expect($resolved)->not->toHaveKey('variables'); // Variables block should be removed
@@ -61,9 +59,9 @@ test('resolves nested variable references', function () {
             ['name' => 'country', 'default' => '$country'],
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['default'])->toBe('PH');
 });
 
@@ -82,9 +80,9 @@ test('resolves multiple levels of nested references', function () {
             ['name' => 'test', 'default' => '$level1'],
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['default'])->toBe('final');
 });
 
@@ -102,9 +100,9 @@ test('handles mixed literal and variable values', function () {
             ['name' => 'name', 'default' => 'John'], // Literal string
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['default'])->toBe('PH');
     expect($resolved['fields'][1]['default'])->toBe(100);
     expect($resolved['fields'][2]['default'])->toBe('John');
@@ -126,9 +124,9 @@ test('preserves type for numeric values', function () {
             ['name' => 'string', 'default' => '$stringValue'],
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['default'])->toBe(100);
     expect($resolved['fields'][0]['default'])->toBeInt();
     expect($resolved['fields'][1]['default'])->toBe(99.99);
@@ -151,9 +149,9 @@ test('preserves type for boolean values', function () {
             ['name' => 'checkbox2', 'default' => '$falseValue'],
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['default'])->toBeTrue();
     expect($resolved['fields'][1]['default'])->toBeFalse();
 });
@@ -177,9 +175,9 @@ test('resolves variables in min, max, step properties', function () {
             ],
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['min'])->toBe(50);
     expect($resolved['fields'][0]['max'])->toBe(50000);
     expect($resolved['fields'][0]['step'])->toBe(10);
@@ -198,9 +196,9 @@ test('clears unresolved variables', function () {
             ['name' => 'field2', 'default' => '$undefined'],
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['default'])->toBe('value');
     expect($resolved['fields'][1]['default'])->toBeNull();
 });
@@ -215,9 +213,9 @@ test('handles empty variables block', function () {
             ['name' => 'country', 'default' => 'PH'],
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['default'])->toBe('PH');
 });
 
@@ -230,9 +228,9 @@ test('handles missing variables block', function () {
             ['name' => 'country', 'default' => 'PH'],
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['default'])->toBe('PH');
 });
 
@@ -246,16 +244,16 @@ test('auto-populates variables from collected data', function () {
             ['name' => 'amount', 'default' => '$step0_entered_amount'],
         ],
     ];
-    
+
     $collectedData = [
         0 => [
             'selected_country' => 'PH',
             'entered_amount' => 500,
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config, $collectedData);
-    
+
     expect($resolved['fields'][0]['default'])->toBe('PH');
     expect($resolved['fields'][1]['default'])->toBe(500);
 });
@@ -270,14 +268,14 @@ test('auto-populates variables from multiple previous steps', function () {
             ['name' => 'email', 'default' => '$step1_email'],
         ],
     ];
-    
+
     $collectedData = [
         0 => ['name' => 'Juan'],
         1 => ['email' => 'juan@example.com'],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config, $collectedData);
-    
+
     expect($resolved['fields'][0]['default'])->toBe('Juan');
     expect($resolved['fields'][1]['default'])->toBe('juan@example.com');
 });
@@ -296,13 +294,13 @@ test('combines explicit variables with collected data', function () {
             ['name' => 'amount', 'default' => '$inheritedAmount'],
         ],
     ];
-    
+
     $collectedData = [
         0 => ['amount' => 1000],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config, $collectedData);
-    
+
     expect($resolved['fields'][0]['default'])->toBe('PH');
     expect($resolved['fields'][1]['default'])->toBe(1000);
 });
@@ -319,9 +317,9 @@ test('resolves placeholder variable references', function () {
             ['name' => 'amount', 'placeholder' => '$placeholderText'],
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['placeholder'])->toBe('Enter your amount');
 });
 
@@ -338,9 +336,9 @@ test('clears circular references after preventing infinite loops', function () {
             ['name' => 'test', 'default' => '$var1'],
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['default'])->toBeNull();
 });
 
@@ -358,9 +356,9 @@ test('only resolves string values starting with dollar sign', function () {
             ['name' => 'active', 'default' => true], // Boolean, not a variable
         ],
     ];
-    
+
     $resolved = $this->resolveVariables->invoke($this->handler, $config);
-    
+
     expect($resolved['fields'][0]['default'])->toBe(100);
     expect($resolved['fields'][1]['default'])->toBe('PH');
     expect($resolved['fields'][2]['default'])->toBeTrue();

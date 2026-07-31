@@ -4,7 +4,7 @@ use LBHurtado\FormFlowManager\Services\TemplateProcessor;
 
 describe('TemplateProcessor', function () {
     beforeEach(function () {
-        $this->processor = new TemplateProcessor();
+        $this->processor = new TemplateProcessor;
         $this->context = [
             'voucher' => [
                 'code' => 'BIO-AQ2A',
@@ -210,7 +210,7 @@ describe('TemplateProcessor', function () {
             ];
 
             $result = $this->processor->processArray($yamlData, $this->context);
-            
+
             expect($result['title'])->toBe('Redeem BIO-AQ2A');
             expect($result['description'])->toBe('Amount: ₱500.00');
             expect($result['fields']['label'])->toBe('Mobile Number for BIO-AQ2A');
@@ -225,7 +225,7 @@ describe('TemplateProcessor', function () {
             ];
 
             $result = $this->processor->processArray($yamlData, $this->context);
-            
+
             expect($result['steps'][0]['title'])->toBe('Step for BIO-AQ2A');
             expect($result['steps'][1]['title'])->toBe('Amount: 500');
         });
@@ -241,7 +241,7 @@ describe('TemplateProcessor', function () {
             ];
 
             $result = $this->processor->processArray($yamlData, $this->context);
-            
+
             expect($result['config']['required'])->toBeTrue();
             expect($result['config']['maxLength'])->toBe(100);
             expect($result['config']['pattern'])->toBe('/^09/');

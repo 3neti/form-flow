@@ -4,7 +4,7 @@ use LBHurtado\FormFlowManager\Services\ExpressionEvaluator;
 use LBHurtado\FormFlowManager\Services\TemplateRenderer;
 
 beforeEach(function () {
-    $this->renderer = new TemplateRenderer();
+    $this->renderer = new TemplateRenderer;
     $this->evaluator = new ExpressionEvaluator($this->renderer);
 });
 
@@ -25,7 +25,7 @@ it('evaluates comparison operators', function () {
 it('evaluates in operator', function () {
     $context = ['item' => 'selfie'];
     expect($this->evaluator->evaluate("item in ['selfie', 'signature']", $context))->toBeTrue();
-    
+
     $context = ['item' => 'location'];
     expect($this->evaluator->evaluate("item in ['selfie', 'signature']", $context))->toBeFalse();
 });
@@ -50,7 +50,7 @@ it('evaluates logical NOT', function () {
 it('evaluates empty function', function () {
     $context = ['value' => ''];
     expect($this->evaluator->evaluate('empty(value)', $context))->toBeTrue();
-    
+
     $context = ['value' => 'hello'];
     expect($this->evaluator->evaluate('empty(value)', $context))->toBeFalse();
 });

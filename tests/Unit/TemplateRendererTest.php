@@ -3,7 +3,7 @@
 use LBHurtado\FormFlowManager\Services\TemplateRenderer;
 
 beforeEach(function () {
-    $this->renderer = new TemplateRenderer();
+    $this->renderer = new TemplateRenderer;
 });
 
 it('renders simple variables', function () {
@@ -49,7 +49,7 @@ it('handles concatenation with tilde', function () {
 
 it('handles function calls', function () {
     $context = [
-        'strtoupper' => fn($str) => strtoupper($str),
+        'strtoupper' => fn ($str) => strtoupper($str),
     ];
     $result = $this->renderer->render('{{ strtoupper("hello") }}', $context);
     expect($result)->toBe('HELLO');
@@ -91,7 +91,7 @@ it('handles array values as JSON', function () {
 
 it('handles function calls with multiple arguments', function () {
     $context = [
-        'concat' => fn($a, $b) => $a . $b,
+        'concat' => fn ($a, $b) => $a.$b,
     ];
     $result = $this->renderer->render('{{ concat("Hello", "World") }}', $context);
     expect($result)->toBe('HelloWorld');
@@ -99,7 +99,7 @@ it('handles function calls with multiple arguments', function () {
 
 it('handles nested function calls', function () {
     $context = [
-        'route' => fn(...$args) => '/api/' . implode('/', $args),
+        'route' => fn (...$args) => '/api/'.implode('/', $args),
     ];
     $result = $this->renderer->render('{{ route("redeem", "ABC123") }}', $context);
     expect($result)->toBe('/api/redeem/ABC123');

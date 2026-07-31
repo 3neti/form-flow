@@ -12,22 +12,22 @@ class TemplateProcessor
         // Match all {{ ... }} patterns
         return preg_replace_callback('/\{\{\s*(.*?)\s*\}\}/', function ($matches) use ($context) {
             $expression = trim($matches[1]);
-            
+
             // Check if it's a conditional (contains ?)
             if (str_contains($expression, '?')) {
                 return $this->evaluateConditional($expression, $context);
             }
-            
+
             // Check if it contains a filter (contains |)
             if (str_contains($expression, '|')) {
                 return $this->applyFilterPipeline($expression, $context);
             }
-            
+
             // Boolean expression with logical operators
             if (preg_match('/\s(?:or|and)\s/i', $expression)) {
                 return $this->evaluateBooleanExpression($expression, $context) ? '1' : '';
             }
-            
+
             // Simple variable resolution
             return $this->resolveVariable($expression, $context);
         }, $template);
@@ -39,7 +39,7 @@ class TemplateProcessor
     public function processArray(array $data, array $context): array
     {
         $result = [];
-        
+
         foreach ($data as $key => $value) {
             if (is_string($value)) {
                 $result[$key] = $this->process($value, $context);
@@ -50,7 +50,7 @@ class TemplateProcessor
                 $result[$key] = $value;
             }
         }
-        
+
         return $result;
     }
 
@@ -60,16 +60,16 @@ class TemplateProcessor
     public function resolveVariable(string $path, array $context): string
     {
         $value = $this->resolveVariableRaw($path, $context);
-        
+
         // Convert to string, handle null/empty
         if ($value === null) {
             return '';
         }
-        
+
         if (is_array($value)) {
             return 'Array'; // Default string representation
         }
-        
+
         return (string) $value;
     }
 
@@ -79,7 +79,7 @@ class TemplateProcessor
     protected function resolveVariableRaw(string $path, array $context): mixed
     {
         $value = $context;
-        
+
         foreach (explode('.', $path) as $key) {
             if (is_array($value) && array_key_exists($key, $value)) {
                 $value = $value[$key];
@@ -87,7 +87,7 @@ class TemplateProcessor
                 return null; // Variable not found
             }
         }
-        
+
         return $value;
     }
 
@@ -98,16 +98,16 @@ class TemplateProcessor
     {
         $parts = explode('|', $expression);
         $variablePath = trim(array_shift($parts));
-        
+
         // Resolve the initial variable (get raw value for filters)
         $value = $this->resolveVariableRaw($variablePath, $context);
-        
+
         // Apply filters in sequence
         foreach ($parts as $filterName) {
             $filterName = trim($filterName);
             $value = $this->applyFilter($value, $filterName);
         }
-        
+
         // Convert final value to string if not already
         return is_string($value) ? $value : (string) $value;
     }
@@ -132,16 +132,16 @@ class TemplateProcessor
     public function evaluateConditional(string $expression, array $context): string
     {
         // Parse ternary: condition ? true_value : false_value
-        if (!preg_match('/^(.+?)\s*\?\s*"([^"]*)"\s*:\s*"([^"]*)"$/', $expression, $matches)) {
+        if (! preg_match('/^(.+?)\s*\?\s*"([^"]*)"\s*:\s*"([^"]*)"$/', $expression, $matches)) {
             return ''; // Invalid conditional format
         }
-        
+
         $condition = trim($matches[1]);
         $trueValue = $matches[2];
         $falseValue = $matches[3];
-        
+
         $result = $this->evaluateCondition($condition, $context);
-        
+
         return $result ? $trueValue : $falseValue;
     }
 
@@ -154,50 +154,57 @@ class TemplateProcessor
         if (preg_match('/^(.+?)\s*==\s*(.+?)$/', $condition, $matches)) {
             $left = $this->resolveValue(trim($matches[1]), $context);
             $right = $this->resolveValue(trim($matches[2]), $context);
+
             return $left == $right;
         }
-        
+
         // Handle inequality (!=)
         if (preg_match('/^(.+?)\s*!=\s*(.+?)$/', $condition, $matches)) {
             $left = $this->resolveValue(trim($matches[1]), $context);
             $right = $this->resolveValue(trim($matches[2]), $context);
+
             return $left != $right;
         }
-        
+
         // Handle greater than (>)
         if (preg_match('/^(.+?)\s*>\s*(.+?)$/', $condition, $matches)) {
             $left = $this->resolveValue(trim($matches[1]), $context);
             $right = $this->resolveValue(trim($matches[2]), $context);
+
             return $left > $right;
         }
-        
+
         // Handle less than (<)
         if (preg_match('/^(.+?)\s*<\s*(.+?)$/', $condition, $matches)) {
             $left = $this->resolveValue(trim($matches[1]), $context);
             $right = $this->resolveValue(trim($matches[2]), $context);
+
             return $left < $right;
         }
-        
+
         // Handle greater than or equal (>=)
         if (preg_match('/^(.+?)\s*>=\s*(.+?)$/', $condition, $matches)) {
             $left = $this->resolveValue(trim($matches[1]), $context);
             $right = $this->resolveValue(trim($matches[2]), $context);
+
             return $left >= $right;
         }
-        
+
         // Handle less than or equal (<=)
         if (preg_match('/^(.+?)\s*<=\s*(.+?)$/', $condition, $matches)) {
             $left = $this->resolveValue(trim($matches[1]), $context);
             $right = $this->resolveValue(trim($matches[2]), $context);
+
             return $left <= $right;
         }
-        
+
         // Simple boolean variable or boolean expression
         if (preg_match('/\s(?:or|and)\s/i', $condition)) {
             return $this->evaluateBooleanExpression($condition, $context);
         }
-        
+
         $value = $this->resolveValue($condition, $context);
+
         return (bool) $value;
     }
 
@@ -210,12 +217,12 @@ class TemplateProcessor
         if (is_numeric($value)) {
             return $value + 0; // Convert to int or float
         }
-        
+
         // Check if it's a string literal (quoted)
         if (preg_match('/^["\'](.+)["\']$/', $value, $matches)) {
             return $matches[1];
         }
-        
+
         // Check if it's a boolean literal
         if ($value === 'true') {
             return true;
@@ -223,22 +230,22 @@ class TemplateProcessor
         if ($value === 'false') {
             return false;
         }
-        
+
         // Resolve as variable path
         $resolved = $this->resolveVariable($value, $context);
-        
+
         // Try to convert to appropriate type
         if (is_numeric($resolved)) {
             return $resolved + 0;
         }
-        
+
         if ($resolved === 'true') {
             return true;
         }
         if ($resolved === 'false') {
             return false;
         }
-        
+
         return $resolved;
     }
 
@@ -249,7 +256,7 @@ class TemplateProcessor
     {
         // Normalize whitespace and lowercase operators
         $expression = preg_replace('/\s+/', ' ', trim($expr));
-        
+
         // Split by ' or '
         $orParts = preg_split('/\sor\s/i', $expression);
         $result = false;
@@ -266,8 +273,8 @@ class TemplateProcessor
                     $token = ltrim($token, '!');
                 }
                 $value = (bool) $this->resolveValue($token, $context);
-                $andResult = $andResult && ($negated ? !$value : $value);
-                if (!$andResult) {
+                $andResult = $andResult && ($negated ? ! $value : $value);
+                if (! $andResult) {
                     break; // Short-circuit AND
                 }
             }
@@ -276,6 +283,7 @@ class TemplateProcessor
                 break; // Short-circuit OR
             }
         }
+
         return $result;
     }
 
@@ -285,7 +293,8 @@ class TemplateProcessor
     protected function formatMoney(mixed $value): string
     {
         $numericValue = is_numeric($value) ? $value + 0 : 0;
-        return '₱' . number_format($numericValue, 2);
+
+        return '₱'.number_format($numericValue, 2);
     }
 
     /**
@@ -297,7 +306,7 @@ class TemplateProcessor
         if (is_string($value) && json_decode($value, true) !== null) {
             return $value;
         }
-        
+
         // Otherwise, encode the value as JSON
         return json_encode($value, JSON_THROW_ON_ERROR);
     }

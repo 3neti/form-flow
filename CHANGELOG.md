@@ -2,6 +2,19 @@
 
 All notable changes to `form-flow` will be documented in this file.
 
+## v1.8.0 - 2026-07-31
+
+### Added
+- Claim-experience and claim-workflow metadata on active, splash, and completion pages
+- Contextual claim confirmation labels and consumed-splash controls
+- Configurable form UI variants with reusable screen and action components
+- Dynamic readonly and persistence field configuration
+- Laravel 13, Inertia 3, and Pest 4 compatibility
+
+### Changed
+- Form Flow no longer couples its driver service to the voucher package
+- Unresolved and circular form variables are cleared before browser exposure
+
 ## v1.0.0 - 2025-12-23
 
 ### Added

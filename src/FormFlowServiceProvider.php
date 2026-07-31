@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace LBHurtado\FormFlowManager;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+use LBHurtado\FormFlowManager\Handlers\FormHandler;
+use LBHurtado\FormFlowManager\Handlers\SplashHandler;
 use LBHurtado\FormFlowManager\Services\DriverRegistry;
 use LBHurtado\FormFlowManager\Services\FormFlowService;
 
 /**
  * Form Flow Manager Service Provider
- * 
+ *
  * Registers routes, services, and configuration for the form flow system.
  */
 class FormFlowServiceProvider extends ServiceProvider
@@ -23,20 +25,20 @@ class FormFlowServiceProvider extends ServiceProvider
     {
         // Register DriverRegistry as singleton
         $this->app->singleton(DriverRegistry::class, function ($app) {
-            return new DriverRegistry();
+            return new DriverRegistry;
         });
-        
+
         // Register FormFlowService
         $this->app->singleton(FormFlowService::class, function ($app) {
-            return new FormFlowService();
+            return new FormFlowService;
         });
-        
+
         // Merge package config
         $this->mergeConfigFrom(
             __DIR__.'/../config/form-flow.php', 'form-flow'
         );
     }
-    
+
     /**
      * Bootstrap services
      */
@@ -44,34 +46,34 @@ class FormFlowServiceProvider extends ServiceProvider
     {
         // Register routes
         $this->registerRoutes();
-        
+
         // Exclude form-flow/start from CSRF (server-to-server endpoint)
         $this->excludeFromCsrf();
-        
+
         // Publish configuration
         $this->publishes([
             __DIR__.'/../config/form-flow.php' => config_path('form-flow.php'),
         ], 'form-flow-config');
-        
+
         // Publish driver directory
         $this->publishes([
             __DIR__.'/../config/form-flow-drivers' => config_path('form-flow-drivers'),
         ], 'form-flow-drivers');
-        
+
         // Publish Vue components
         $this->publishes([
             __DIR__.'/../stubs/resources/js/pages/form-flow/core' => resource_path('js/pages/form-flow/core'),
         ], 'form-flow-views');
-        
+
         // Register built-in handlers
         $this->registerBuiltInHandlers();
-        
+
         // Auto-discover drivers
         if ($this->app->runningInConsole() === false) {
             $this->app->make(DriverRegistry::class)->discover();
         }
     }
-    
+
     /**
      * Register built-in handlers with form-flow-manager
      */
@@ -79,15 +81,15 @@ class FormFlowServiceProvider extends ServiceProvider
     {
         // Get current handlers from config
         $handlers = config('form-flow.handlers', []);
-        
+
         // Add built-in handlers
-        $handlers['form'] = \LBHurtado\FormFlowManager\Handlers\FormHandler::class;
-        $handlers['splash'] = \LBHurtado\FormFlowManager\Handlers\SplashHandler::class;
-        
+        $handlers['form'] = FormHandler::class;
+        $handlers['splash'] = SplashHandler::class;
+
         // Update config
         config(['form-flow.handlers' => $handlers]);
     }
-    
+
     /**
      * Register package routes
      */
@@ -100,26 +102,26 @@ class FormFlowServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__.'/../routes/form-flow.php');
         });
     }
-    
+
     /**
      * Exclude form-flow/start from CSRF verification
-     * 
+     *
      * This is required for server-to-server POST requests
      */
     protected function excludeFromCsrf(): void
     {
         $this->app->booted(function () {
             $prefix = config('form-flow.route_prefix', 'form-flow');
-            
+
             // Add to CSRF except list if ValidateCsrfToken middleware exists
             if (class_exists('\App\Http\Middleware\ValidateCsrfToken')) {
                 $middleware = $this->app->make('\App\Http\Middleware\ValidateCsrfToken');
-                
+
                 if (method_exists($middleware, 'except')) {
                     $reflection = new \ReflectionClass($middleware);
                     $property = $reflection->getProperty('except');
                     $property->setAccessible(true);
-                    
+
                     $except = $property->getValue($middleware);
                     $except[] = "{$prefix}/start";
                     $property->setValue($middleware, $except);

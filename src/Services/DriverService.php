@@ -6,6 +6,8 @@ namespace LBHurtado\FormFlowManager\Services;
 
 use Illuminate\Support\Facades\File;
 use LBHurtado\FormFlowManager\Data\FormFlowInstructionsData;
+use LBHurtado\FormFlowManager\Handlers\FormHandler;
+use LBHurtado\FormFlowManager\Handlers\MissingHandler;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -40,7 +42,7 @@ class DriverService
     protected function getTemplateProcessor(): TemplateProcessor
     {
         if (! $this->templateProcessor) {
-            $this->templateProcessor = new TemplateProcessor();
+            $this->templateProcessor = new TemplateProcessor;
         }
 
         return $this->templateProcessor;
@@ -293,8 +295,8 @@ class DriverService
         $configHandlers = config('form-flow.handlers', []);
 
         $builtInHandlers = [
-            'form' => \LBHurtado\FormFlowManager\Handlers\FormHandler::class,
-            'missing' => \LBHurtado\FormFlowManager\Handlers\MissingHandler::class,
+            'form' => FormHandler::class,
+            'missing' => MissingHandler::class,
         ];
 
         $handlers = array_merge($builtInHandlers, $configHandlers);

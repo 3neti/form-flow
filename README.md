@@ -20,15 +20,15 @@ Driver-based form flow orchestration system with DirXML-style mapping for Larave
 ## Requirements
 
 - PHP ^8.2
-- Laravel ^11.0 || ^12.0
-- Inertia.js ^2.0
+- Laravel ^11.0 || ^12.0 || ^13.0
+- Inertia.js ^2.0 || ^3.0
 
 ## Installation
 
 Install via Composer:
 
 ```bash
-composer require 3neti/form-flow
+composer require 3neti/form-flow:^1.8
 ```
 
 ### Publish Assets
@@ -179,6 +179,9 @@ The package includes ready-to-use Vue components:
 - `MissingHandler.vue` - Fallback for missing handlers
 
 ## Testing
+
+The current release matrix covers PHP 8.3 and 8.4 on Laravel 12
+and 13. Laravel 11 remains supported by the package constraints.
 
 ```bash
 composer test
