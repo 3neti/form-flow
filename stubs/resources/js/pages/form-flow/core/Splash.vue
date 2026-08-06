@@ -207,7 +207,7 @@ if (import.meta.env.DEV && props.claim_experience) {
           v-if="app_logo"
           :src="app_logo"
           :alt="app_name ?? 'Logo'"
-          class="mb-4 h-20 w-20 object-contain drop-shadow-lg animate-fade-in sm:h-24 sm:w-24"
+          class="form-flow-default-splash-logo mb-4 h-20 w-20 object-contain drop-shadow-lg animate-fade-in sm:h-24 sm:w-24"
         />
 
         <p
@@ -382,6 +382,24 @@ if (import.meta.env.DEV && props.claim_experience) {
 
 .animate-fade-in-delay {
   animation: fade-in 0.6s ease-out 0.15s both;
+}
+
+.form-flow-default-splash-logo {
+  display: block;
+  width: 5rem;
+  height: 5rem;
+  max-width: 5rem;
+  max-height: 5rem;
+  object-fit: contain;
+}
+
+@media (min-width: 640px) {
+  .form-flow-default-splash-logo {
+    width: 6rem;
+    height: 6rem;
+    max-width: 6rem;
+    max-height: 6rem;
+  }
 }
 
 /* Prose overrides for custom splash content */
