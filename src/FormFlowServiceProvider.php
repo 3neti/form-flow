@@ -10,6 +10,7 @@ use LBHurtado\FormFlowManager\Handlers\FormHandler;
 use LBHurtado\FormFlowManager\Handlers\SplashHandler;
 use LBHurtado\FormFlowManager\Services\DriverRegistry;
 use LBHurtado\FormFlowManager\Services\FormFlowService;
+use LBHurtado\FormFlowManager\Services\FormHandlerRegistry;
 
 /**
  * Form Flow Manager Service Provider
@@ -32,6 +33,8 @@ class FormFlowServiceProvider extends ServiceProvider
         $this->app->singleton(FormFlowService::class, function ($app) {
             return new FormFlowService;
         });
+
+        $this->app->singleton(FormHandlerRegistry::class);
 
         // Merge package config
         $this->mergeConfigFrom(

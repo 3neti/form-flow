@@ -7,6 +7,7 @@ namespace LBHurtado\FormFlowManager\Handlers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use LBHurtado\FormFlowManager\Contracts\FormHandlerInterface;
+use LBHurtado\FormFlowManager\Contracts\FormHandlerPreviewInterface;
 use LBHurtado\FormFlowManager\Data\FormFlowStepData;
 
 /**
@@ -15,7 +16,7 @@ use LBHurtado\FormFlowManager\Data\FormFlowStepData;
  * Fallback handler for when a required handler is not installed.
  * Shows environment-aware message (error in production, skip in development).
  */
-class MissingHandler implements FormHandlerInterface
+class MissingHandler implements FormHandlerInterface, FormHandlerPreviewInterface
 {
     public function getName(): string
     {
@@ -67,19 +68,38 @@ class MissingHandler implements FormHandlerInterface
 
     public function render(FormFlowStepData $step, array $context = [])
     {
+        $props = $this->props($step, $context);
+
+        // Log the missing handler
+        \Log::warning('[FormFlow] Missing handler detected', [
+            'handler' => $props['handler_name'],
+            'flow_id' => $context['flow_id'] ?? null,
+            'environment' => app()->environment(),
+        ]);
+
+        return Inertia::render('form-flow/core/MissingHandler', $props);
+    }
+
+    public function preview(FormFlowStepData $step, array $context = []): array
+    {
+        return [
+            'component' => 'form-flow/core/MissingHandler',
+            'props' => $this->props($step, array_merge($context, ['preview_mode' => true])),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    protected function props(FormFlowStepData $step, array $context = []): array
+    {
         $handlerName = $step->config['missing_handler_name'] ?? 'unknown';
         $handlerTitle = $step->config['missing_handler_title'] ?? 'Unknown Step';
         $installHint = $step->config['install_hint'] ?? "composer require lbhurtado/form-handler-{$handlerName}";
         $isProduction = app()->environment('production');
 
-        // Log the missing handler
-        \Log::warning('[FormFlow] Missing handler detected', [
-            'handler' => $handlerName,
-            'flow_id' => $context['flow_id'] ?? null,
-            'environment' => app()->environment(),
-        ]);
-
-        return Inertia::render('form-flow/core/MissingHandler', [
+        return [
             'flow_id' => $context['flow_id'] ?? null,
             'step_index' => $context['step_index'] ?? 0,
             'handler_name' => $handlerName,
@@ -87,7 +107,8 @@ class MissingHandler implements FormHandlerInterface
             'install_hint' => $installHint,
             'is_production' => $isProduction,
             'can_skip' => ! $isProduction,
-        ]);
+            'preview_mode' => (bool) ($context['preview_mode'] ?? false),
+        ];
     }
 
     public function getConfigSchema(): array

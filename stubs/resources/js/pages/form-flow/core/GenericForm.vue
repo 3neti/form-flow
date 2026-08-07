@@ -122,6 +122,7 @@ interface Props {
   claim_experience?: ClaimExperience | null;
   claim_workflow?: Record<string, unknown> | null;
   ui_variant?: FormFlowUiVariant | string | null;
+  preview_mode?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -132,6 +133,7 @@ const props = withDefaults(defineProps<Props>(), {
   claim_experience: undefined,
   claim_workflow: undefined,
   ui_variant: "default",
+  preview_mode: false,
 });
 
 // Form state
@@ -495,6 +497,7 @@ const normalFields = computed(() =>
 // Smart auto-focus: if a tel field already has a value (from persist/default),
 // focus the next editable input so the phone number displays formatted
 onMounted(() => {
+  if (props.preview_mode) return;
   nextTick(() => {
     const allFields = [
       ...heroFields.value,
@@ -572,6 +575,7 @@ function formatBadgeValue(field?: FieldDefinition): string {
 
 // Form submission
 async function handleSubmit() {
+  if (props.preview_mode) return;
   submitting.value = true;
   apiError.value = null;
   errors.value = {};
@@ -617,6 +621,7 @@ async function handleSubmit() {
 }
 
 function handleCancel() {
+  if (props.preview_mode) return;
   router.post(`/form-flow/${props.flow_id}/cancel`);
 }
 

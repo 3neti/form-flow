@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use LBHurtado\FormFlowManager\Contracts\FormHandlerInterface;
+use LBHurtado\FormFlowManager\Contracts\FormHandlerPreviewInterface;
 use LBHurtado\FormFlowManager\Data\FormFlowStepData;
 
 /**
@@ -18,7 +19,7 @@ use LBHurtado\FormFlowManager\Data\FormFlowStepData;
  *
  * Supports: text, email, date, number, textarea, select, checkbox, file
  */
-class FormHandler implements FormHandlerInterface
+class FormHandler implements FormHandlerInterface, FormHandlerPreviewInterface
 {
     public function getName(): string
     {
@@ -72,6 +73,23 @@ class FormHandler implements FormHandlerInterface
 
     public function render(FormFlowStepData $step, array $context = [])
     {
+        return Inertia::render('form-flow/core/GenericForm', $this->props($step, $context));
+    }
+
+    public function preview(FormFlowStepData $step, array $context = []): array
+    {
+        return [
+            'component' => 'form-flow/core/GenericForm',
+            'props' => $this->props($step, array_merge($context, ['preview_mode' => true])),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    protected function props(FormFlowStepData $step, array $context = []): array
+    {
         // Resolve variables with collected data from previous steps
         $collectedData = $context['collected_data'] ?? [];
         $resolvedConfig = $this->resolveVariables($step->config, $collectedData);
@@ -81,7 +99,7 @@ class FormHandler implements FormHandlerInterface
         $description = $resolvedConfig['description'] ?? null;
         $autoSync = $resolvedConfig['auto_sync'] ?? null;
 
-        return Inertia::render('form-flow/core/GenericForm', [
+        return [
             'flow_id' => $context['flow_id'] ?? null,
             'step_index' => $context['step_index'] ?? 0,
             'step_name' => $resolvedConfig['step_name'] ?? null,
@@ -92,7 +110,8 @@ class FormHandler implements FormHandlerInterface
             'claim_experience' => $context['claim_experience'] ?? null,
             'claim_workflow' => $resolvedConfig['claim_workflow'] ?? null,
             'ui_variant' => $resolvedConfig['ui_variant'] ?? config('form-flow.ui.variant', 'default'),
-        ]);
+            'preview_mode' => (bool) ($context['preview_mode'] ?? false),
+        ];
     }
 
     public function getConfigSchema(): array

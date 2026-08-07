@@ -11,10 +11,9 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use LBHurtado\FormFlowManager\Data\FormFlowInstructionsData;
 use LBHurtado\FormFlowManager\Data\FormFlowStepData;
-use LBHurtado\FormFlowManager\Handlers\FormHandler;
 use LBHurtado\FormFlowManager\Handlers\MissingHandler;
-use LBHurtado\FormFlowManager\Handlers\SplashHandler;
 use LBHurtado\FormFlowManager\Services\FormFlowService;
+use LBHurtado\FormFlowManager\Services\FormHandlerRegistry;
 
 /**
  * Form Flow Controller
@@ -25,7 +24,8 @@ use LBHurtado\FormFlowManager\Services\FormFlowService;
 class FormFlowController extends Controller
 {
     public function __construct(
-        protected FormFlowService $flowService
+        protected FormFlowService $flowService,
+        protected FormHandlerRegistry $handlers,
     ) {}
 
     /**
@@ -167,11 +167,9 @@ class FormFlowController extends Controller
         }
 
         // Get the handler by name
-        $handlerClass = $this->getHandlerClass($stepData->handler);
+        $handlerClass = $this->handlers->classFor($stepData->handler);
 
-        if (! $handlerClass) {
-            // Fallback to MissingHandler instead of crashing
-            $handlerClass = MissingHandler::class;
+        if ($handlerClass === MissingHandler::class) {
             \Log::warning('[FormFlow] Missing handler at runtime', [
                 'handler' => $stepData->handler,
                 'flow_id' => $flowId,
@@ -214,11 +212,9 @@ class FormFlowController extends Controller
             $stepData = FormFlowStepData::from($state['instructions']['steps'][$step]);
 
             // Get the handler
-            $handlerClass = $this->getHandlerClass($stepData->handler);
+            $handlerClass = $this->handlers->classFor($stepData->handler);
 
-            if (! $handlerClass) {
-                // Fallback to MissingHandler instead of throwing
-                $handlerClass = MissingHandler::class;
+            if ($handlerClass === MissingHandler::class) {
                 \Log::warning('[FormFlow] Missing handler at runtime (updateStep)', [
                     'handler' => $stepData->handler,
                     'flow_id' => $flowId,
@@ -375,33 +371,6 @@ class FormFlowController extends Controller
                 'data' => $data,
             ]);
         }
-    }
-
-    /**
-     * Get handler class from handler name
-     *
-     * Maps handler names to their class implementations.
-     * Built-in handler: 'form' (for basic inputs)
-     * Plugin handlers registered via config: 'location', 'selfie', etc.
-     *
-     * @param  string  $handlerName  Handler name
-     * @return string|null Handler class name or null if not found
-     */
-    protected function getHandlerClass(string $handlerName): ?string
-    {
-        // Get handlers from config (allows plugins to register)
-        $configHandlers = config('form-flow.handlers', []);
-
-        // Built-in handlers
-        $builtInHandlers = [
-            'form' => FormHandler::class,
-            'splash' => SplashHandler::class,
-        ];
-
-        // Merge: config handlers override built-in if needed
-        $handlers = array_merge($builtInHandlers, $configHandlers);
-
-        return $handlers[$handlerName] ?? null;
     }
 
     private function claimExperience(array $state): ?array

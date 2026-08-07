@@ -9,9 +9,11 @@ const props = defineProps<{
   install_hint: string
   is_production: boolean
   can_skip: boolean
+  preview_mode?: boolean
 }>()
 
 const handleSkip = () => {
+  if (props.preview_mode) return
   console.log('[MissingHandler] Skipping step', {
     flow_id: props.flow_id,
     step_index: props.step_index,
@@ -35,6 +37,7 @@ const handleSkip = () => {
 }
 
 const handleGoBack = () => {
+  if (props.preview_mode) return
   router.visit('/disburse')
 }
 </script>

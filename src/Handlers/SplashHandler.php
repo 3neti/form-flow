@@ -7,6 +7,7 @@ namespace LBHurtado\FormFlowManager\Handlers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use LBHurtado\FormFlowManager\Contracts\FormHandlerInterface;
+use LBHurtado\FormFlowManager\Contracts\FormHandlerPreviewInterface;
 use LBHurtado\FormFlowManager\Data\FormFlowStepData;
 
 /**
@@ -22,7 +23,7 @@ use LBHurtado\FormFlowManager\Data\FormFlowStepData;
  * - URL (if starts with http:// or https://)
  * - Plain text (fallback)
  */
-class SplashHandler implements FormHandlerInterface
+class SplashHandler implements FormHandlerInterface, FormHandlerPreviewInterface
 {
     public function getName(): string
     {
@@ -45,6 +46,23 @@ class SplashHandler implements FormHandlerInterface
     }
 
     public function render(FormFlowStepData $step, array $context = [])
+    {
+        return Inertia::render('form-flow/core/Splash', $this->props($step, $context));
+    }
+
+    public function preview(FormFlowStepData $step, array $context = []): array
+    {
+        return [
+            'component' => 'form-flow/core/Splash',
+            'props' => $this->props($step, array_merge($context, ['preview_mode' => true])),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>
+     */
+    protected function props(FormFlowStepData $step, array $context = []): array
     {
         $content = $step->config['content'] ?? '';
 
@@ -72,6 +90,7 @@ class SplashHandler implements FormHandlerInterface
             'claim_experience_warnings' => array_values(array_filter([
                 $splashAlreadyConsumed ? 'duplicate_splash_candidate' : null,
             ])),
+            'preview_mode' => (bool) ($context['preview_mode'] ?? false),
         ];
 
         // When no custom content and no config override, pass structured props
@@ -102,7 +121,7 @@ class SplashHandler implements FormHandlerInterface
                 : $this->replaceVariables($content, $contentContext);
         }
 
-        return Inertia::render('form-flow/core/Splash', $props);
+        return $props;
     }
 
     /**

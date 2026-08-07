@@ -42,6 +42,7 @@ interface Props {
   app_author?: string;
   copyright_text?: string;
   claim_experience?: ClaimExperience | null;
+  preview_mode?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -55,6 +56,7 @@ const props = withDefaults(defineProps<Props>(), {
   app_author: undefined,
   copyright_text: undefined,
   claim_experience: undefined,
+  preview_mode: false,
 });
 
 // Coerce timeout to number (env values may arrive as strings)
@@ -131,6 +133,7 @@ const progressPercentage = computed(() => {
 
 // Start countdown
 onMounted(() => {
+  if (props.preview_mode) return;
   if (timeoutSeconds.value > 0) {
     intervalId = setInterval(() => {
       remainingSeconds.value -= 1;
@@ -152,6 +155,7 @@ onUnmounted(() => {
 
 // Submit to next step
 async function handleContinue() {
+  if (props.preview_mode) return;
   if (submitting.value) return;
 
   submitting.value = true;
