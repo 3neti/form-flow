@@ -198,6 +198,39 @@ test('form handler allows step config to override ui variant', function () {
         ->and(formHandlerInertiaProps($response)['ui_variant'])->toBe('immersive');
 });
 
+test('form handler carries canonical institution choices to the bank account field', function () {
+    $response = app(FormHandler::class)->render(
+        FormFlowStepData::from([
+            'handler' => 'form',
+            'config' => [
+                'fields' => [[
+                    'name' => 'bank_code',
+                    'type' => 'bank_account',
+                    'required' => true,
+                    'institution_options' => [[
+                        'key' => 'pnb',
+                        'value' => 'PNBMPHMMTOD',
+                        'name' => 'Philippine National Bank',
+                    ]],
+                ]],
+            ],
+        ]),
+        [
+            'flow_id' => 'flow-institution-options',
+            'step_index' => 0,
+            'collected_data' => [],
+        ],
+    );
+
+    $field = formHandlerInertiaProps($response)['fields'][0];
+
+    expect($field['institution_options'])->toBe([[
+        'key' => 'pnb',
+        'value' => 'PNBMPHMMTOD',
+        'name' => 'Philippine National Bank',
+    ]]);
+});
+
 /**
  * Test 5: Form handler accepts and stores submitted data
  */

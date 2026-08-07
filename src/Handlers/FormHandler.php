@@ -147,6 +147,10 @@ class FormHandler implements FormHandlerInterface, FormHandlerPreviewInterface
             'fields.*.help_text' => 'nullable|string',
             'fields.*.variant' => 'nullable|string|in:readonly-badge,normal',
             'fields.*.persist' => 'nullable|boolean',
+            'fields.*.institution_options' => 'nullable|array',
+            'fields.*.institution_options.*.key' => 'required_with:fields.*.institution_options|string',
+            'fields.*.institution_options.*.value' => 'required_with:fields.*.institution_options|string',
+            'fields.*.institution_options.*.name' => 'required_with:fields.*.institution_options|string',
             'title' => 'nullable|string',
             'description' => 'nullable|string',
         ];

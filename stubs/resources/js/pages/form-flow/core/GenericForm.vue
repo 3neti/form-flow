@@ -76,6 +76,17 @@ interface FieldDefinition {
   help_text?: string;
   variant?: "readonly-badge" | "normal";
   persist?: boolean;
+  institution_options?: Array<{
+    key: string;
+    value: string;
+    name: string;
+    short_name: string;
+    category: string;
+    account_label: string;
+    identifier_scheme: string;
+    aliases: string[];
+    commonly_used: boolean;
+  }>;
   // Slice / divisible voucher metadata (from YAML driver context)
   slice_mode?: string | null;
   min_withdrawal?: number | string | null;
@@ -1046,6 +1057,7 @@ if (import.meta.env.DEV && props.claim_experience) {
                       <BankEMISelect
                         v-model="formData[field.name]"
                         :settlement-rail="formData.settlement_rail || null"
+                        :institutions="field.institution_options ?? []"
                         :disabled="field.disabled || field.readonly"
                       />
                       <p
@@ -1391,6 +1403,7 @@ if (import.meta.env.DEV && props.claim_experience) {
                 <BankEMISelect
                   v-model="formData[field.name]"
                   :settlement-rail="formData.settlement_rail || null"
+                  :institutions="field.institution_options ?? []"
                   :disabled="field.disabled || field.readonly"
                 />
                 <p v-if="errors[field.name]" class="text-sm text-destructive">
