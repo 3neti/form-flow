@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ButtonHTMLAttributes } from "vue";
-import { computed } from "vue";
+import { computed, type CSSProperties } from "vue";
 import { Loader2 } from "lucide-vue-next";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,7 +69,7 @@ const containerClass = computed(() => {
 
   if (normalizedActionPlacement.value === "viewport_bottom") {
     return [
-      "fixed inset-x-0 bottom-[max(0.2in,calc(env(safe-area-inset-bottom)+1rem))] z-30 mx-auto grid w-full max-w-md gap-2 px-5 sm:max-w-lg",
+      "fixed inset-x-0 z-30 mx-auto grid w-full max-w-md gap-2 px-5 sm:max-w-lg",
       columns,
     ];
   }
@@ -99,6 +99,12 @@ const buttonClass = computed(() =>
     ? "h-11 w-full rounded-full"
     : "w-full rounded-full",
 );
+
+const viewportBottomStyle = computed<CSSProperties | undefined>(() =>
+  normalizedActionPlacement.value === "viewport_bottom"
+    ? { bottom: "max(0.2in, calc(env(safe-area-inset-bottom) + 1rem))" }
+    : undefined,
+);
 </script>
 
 <template>
@@ -108,7 +114,7 @@ const buttonClass = computed(() =>
     aria-hidden="true"
   />
 
-  <div :class="containerClass">
+  <div :class="containerClass" :style="viewportBottomStyle">
     <Button
       v-if="props.showSecondary"
       type="button"

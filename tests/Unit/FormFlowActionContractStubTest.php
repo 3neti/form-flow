@@ -17,7 +17,9 @@ it('exposes an explicit action placement contract in the shared action component
         ->toContain('normalizedActionPlacement.value === "viewport_bottom"')
         ->toContain('normalizedActionPlacement.value === "bottom_sticky"')
         ->toContain('normalizedActionPlacement.value === "bottom"')
-        ->toContain('bottom-[max(0.2in,calc(env(safe-area-inset-bottom)+1rem))]')
+        ->toContain('viewportBottomStyle')
+        ->toContain('bottom: "max(0.2in, calc(env(safe-area-inset-bottom) + 1rem))"')
+        ->toContain(':style="viewportBottomStyle"')
         ->toContain('sticky bottom-0')
         ->toContain('mt-auto grid gap-3 border-t pt-4');
 });
