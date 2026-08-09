@@ -28,6 +28,11 @@ interface ClaimExperience {
   diagnostics?: ClaimExperienceDiagnostics;
 }
 
+interface PackageVersion {
+  name: string;
+  version: string;
+}
+
 interface Props {
   flow_id: string;
   step_index: number;
@@ -41,6 +46,8 @@ interface Props {
   app_logo?: string;
   app_author?: string;
   copyright_text?: string;
+  package_versions?: PackageVersion[] | Record<string, string> | null;
+  show_package_versions?: boolean;
   claim_experience?: ClaimExperience | null;
   preview_mode?: boolean;
 }
@@ -55,6 +62,8 @@ const props = withDefaults(defineProps<Props>(), {
   app_logo: undefined,
   app_author: undefined,
   copyright_text: undefined,
+  package_versions: undefined,
+  show_package_versions: false,
   claim_experience: undefined,
   preview_mode: false,
 });
@@ -129,6 +138,22 @@ const progressPercentage = computed(() => {
     ((timeoutSeconds.value - remainingSeconds.value) / timeoutSeconds.value) *
     100
   );
+});
+
+const normalizedPackageVersions = computed<PackageVersion[]>(() => {
+  const versions = props.package_versions;
+
+  if (!versions) {
+    return [];
+  }
+
+  if (Array.isArray(versions)) {
+    return versions.filter((version) => version.name && version.version);
+  }
+
+  return Object.entries(versions)
+    .filter(([, version]) => typeof version === "string" && version.length > 0)
+    .map(([name, version]) => ({ name, version }));
 });
 
 // Start countdown
@@ -275,6 +300,20 @@ if (import.meta.env.DEV && props.claim_experience) {
           >
             {{ copyright_text }}
           </p>
+
+          <p
+            v-if="show_package_versions && normalizedPackageVersions.length > 0"
+            class="pt-2 text-[10px] font-medium text-muted-foreground/70"
+            data-testid="form-flow-package-version-strip"
+          >
+            <span
+              v-for="(packageVersion, index) in normalizedPackageVersions"
+              :key="packageVersion.name"
+            >
+              <span v-if="index > 0" aria-hidden="true"> · </span>
+              <span>{{ packageVersion.name }} {{ packageVersion.version }}</span>
+            </span>
+          </p>
         </footer>
       </CardContent>
     </Card>
@@ -362,6 +401,20 @@ if (import.meta.env.DEV && props.claim_experience) {
             <span v-else>{{ button_label }}</span>
           </Button>
         </div>
+
+        <p
+          v-if="show_package_versions && normalizedPackageVersions.length > 0"
+          class="text-center text-[10px] font-medium text-muted-foreground/70"
+          data-testid="form-flow-package-version-strip"
+        >
+          <span
+            v-for="(packageVersion, index) in normalizedPackageVersions"
+            :key="packageVersion.name"
+          >
+            <span v-if="index > 0" aria-hidden="true"> · </span>
+            <span>{{ packageVersion.name }} {{ packageVersion.version }}</span>
+          </span>
+        </p>
       </CardContent>
     </Card>
   </div>

@@ -13,11 +13,21 @@ import {
   type FormFlowUiVariant,
 } from "./formFlowUiVariant";
 
+interface PackageVersion {
+  name: string;
+  version: string;
+}
+
 const props = withDefaults(
   defineProps<{
     title: string;
     description?: string;
     variant?: FormFlowUiVariant | string | null;
+    verticalAlign?: "center" | "top" | string | null;
+    appName?: string | null;
+    appLogo?: string | null;
+    packageVersions?: PackageVersion[] | Record<string, string> | null;
+    showPackageVersions?: boolean;
     screenClass?: HTMLAttributes["class"];
     innerClass?: HTMLAttributes["class"];
     cardClass?: HTMLAttributes["class"];
@@ -26,6 +36,11 @@ const props = withDefaults(
   {
     description: "",
     variant: "default",
+    verticalAlign: null,
+    appName: null,
+    appLogo: null,
+    packageVersions: null,
+    showPackageVersions: false,
     screenClass: "",
     innerClass: "",
     cardClass: "",
@@ -60,6 +75,10 @@ const innerVariantClass = computed(() => {
 
   return "mx-auto w-full max-w-2xl";
 });
+
+const innerAlignmentClass = computed(() =>
+  props.verticalAlign === "center" ? "justify-center" : "",
+);
 
 const cardVariantClass = computed(() => {
   if (normalizedVariant.value === "immersive") {
@@ -108,15 +127,48 @@ const contentVariantClass = computed(() => {
 
   return "";
 });
+
+const normalizedPackageVersions = computed<PackageVersion[]>(() => {
+  const versions = props.packageVersions;
+
+  if (!versions) {
+    return [];
+  }
+
+  if (Array.isArray(versions)) {
+    return versions.filter((version) => version.name && version.version);
+  }
+
+  return Object.entries(versions)
+    .filter(([, version]) => typeof version === "string" && version.length > 0)
+    .map(([name, version]) => ({ name, version }));
+});
 </script>
 
 <template>
   <div data-form-flow-screen :class="[screenVariantClass, props.screenClass]">
-    <div :class="[innerVariantClass, props.innerClass]">
+    <div :class="[innerVariantClass, innerAlignmentClass, props.innerClass]">
       <slot name="alert" />
 
       <Card :class="[cardVariantClass, props.cardClass]">
         <CardHeader :class="headerVariantClass">
+          <div
+            v-if="props.appLogo || props.appName"
+            class="mb-3 flex items-center gap-3"
+          >
+            <img
+              v-if="props.appLogo"
+              :src="props.appLogo"
+              :alt="props.appName ?? 'Logo'"
+              class="h-9 max-h-9 w-auto max-w-28 object-contain"
+            />
+            <p
+              v-if="props.appName"
+              class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+            >
+              {{ props.appName }}
+            </p>
+          </div>
           <CardTitle :class="['flex items-center gap-2', titleVariantClass]">
             <slot name="icon" />
             {{ props.title }}
@@ -132,6 +184,20 @@ const contentVariantClass = computed(() => {
           <slot />
         </CardContent>
       </Card>
+
+      <p
+        v-if="props.showPackageVersions && normalizedPackageVersions.length > 0"
+        class="mt-3 text-center text-[10px] font-medium text-muted-foreground/70"
+        data-testid="form-flow-package-version-strip"
+      >
+        <span
+          v-for="(packageVersion, index) in normalizedPackageVersions"
+          :key="packageVersion.name"
+        >
+          <span v-if="index > 0" aria-hidden="true"> · </span>
+          <span>{{ packageVersion.name }} {{ packageVersion.version }}</span>
+        </span>
+      </p>
     </div>
   </div>
 </template>

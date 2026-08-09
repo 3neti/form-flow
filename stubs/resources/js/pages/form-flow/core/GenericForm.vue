@@ -122,6 +122,11 @@ interface ClaimExperience {
   diagnostics?: ClaimExperienceDiagnostics;
 }
 
+interface PackageVersion {
+  name: string;
+  version: string;
+}
+
 interface Props {
   flow_id: string;
   step_index: number;
@@ -133,7 +138,12 @@ interface Props {
   claim_experience?: ClaimExperience | null;
   claim_workflow?: Record<string, unknown> | null;
   ui_variant?: FormFlowUiVariant | string | null;
-  action_placement?: "inline" | "bottom_sticky" | string | null;
+  action_placement?: "inline" | "bottom" | "bottom_sticky" | string | null;
+  ui_layout?: Record<string, unknown> | null;
+  app_name?: string | null;
+  app_logo?: string | null;
+  package_versions?: PackageVersion[] | Record<string, string> | null;
+  show_package_versions?: boolean;
   preview_mode?: boolean;
 }
 
@@ -146,6 +156,11 @@ const props = withDefaults(defineProps<Props>(), {
   claim_workflow: undefined,
   ui_variant: "default",
   action_placement: undefined,
+  ui_layout: undefined,
+  app_name: undefined,
+  app_logo: undefined,
+  package_versions: undefined,
+  show_package_versions: false,
   preview_mode: false,
 });
 
@@ -168,6 +183,21 @@ const submitLabel = computed(() =>
   claimWorkflowConfirmationLabel(claimWorkflow.value),
 );
 const uiVariant = computed(() => normalizeFormFlowUiVariant(props.ui_variant));
+const normalizedPackageVersions = computed<PackageVersion[]>(() => {
+  const versions = props.package_versions;
+
+  if (!versions) {
+    return [];
+  }
+
+  if (Array.isArray(versions)) {
+    return versions.filter((version) => version.name && version.version);
+  }
+
+  return Object.entries(versions)
+    .filter(([, version]) => typeof version === "string" && version.length > 0)
+    .map(([name, version]) => ({ name, version }));
+});
 const isCompactUi = computed(() => uiVariant.value === "compact");
 const isImmersiveUi = computed(() => uiVariant.value === "immersive");
 const screenClass = computed(() => {
@@ -662,6 +692,23 @@ if (import.meta.env.DEV && props.claim_experience) {
     <!-- Form Card -->
     <Card :class="cardClass">
       <CardHeader :class="cardHeaderClass">
+        <div
+          v-if="props.app_logo || props.app_name"
+          class="mb-3 flex items-center gap-3"
+        >
+          <img
+            v-if="props.app_logo"
+            :src="props.app_logo"
+            :alt="props.app_name ?? 'Logo'"
+            class="h-9 max-h-9 w-auto max-w-28 object-contain"
+          />
+          <p
+            v-if="props.app_name"
+            class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+          >
+            {{ props.app_name }}
+          </p>
+        </div>
         <CardTitle>{{ title }}</CardTitle>
       </CardHeader>
       <CardContent :class="cardContentClass">
@@ -1410,5 +1457,19 @@ if (import.meta.env.DEV && props.claim_experience) {
         </form>
       </CardContent>
     </Card>
+
+    <p
+      v-if="props.show_package_versions && normalizedPackageVersions.length > 0"
+      class="mt-3 text-center text-[10px] font-medium text-muted-foreground/70"
+      data-testid="form-flow-package-version-strip"
+    >
+      <span
+        v-for="(packageVersion, index) in normalizedPackageVersions"
+        :key="packageVersion.name"
+      >
+        <span v-if="index > 0" aria-hidden="true"> · </span>
+        <span>{{ packageVersion.name }} {{ packageVersion.version }}</span>
+      </span>
+    </p>
   </div>
 </template>

@@ -8,7 +8,7 @@ import {
   type FormFlowUiVariant,
 } from "./formFlowUiVariant";
 
-type FormFlowActionPlacement = "inline" | "bottom_sticky";
+type FormFlowActionPlacement = "inline" | "bottom" | "bottom_sticky";
 
 const props = withDefaults(
   defineProps<{
@@ -45,10 +45,12 @@ const normalizedVariant = computed(() =>
 );
 
 const normalizedActionPlacement = computed<FormFlowActionPlacement>(() =>
-  props.actionPlacement === "bottom_sticky" || props.actionPlacement === "inline"
+  props.actionPlacement === "bottom_sticky" ||
+  props.actionPlacement === "bottom" ||
+  props.actionPlacement === "inline"
     ? props.actionPlacement
     : normalizedVariant.value === "immersive"
-      ? "bottom_sticky"
+      ? "bottom"
       : "inline",
 );
 
@@ -60,6 +62,10 @@ const containerClass = computed(() => {
       "sticky bottom-0 z-10 -mx-4 mt-auto grid gap-3 border-t bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/85 sm:-mx-5 sm:px-5",
       columns,
     ];
+  }
+
+  if (normalizedActionPlacement.value === "bottom") {
+    return ["mt-auto grid gap-3 border-t pt-4", columns];
   }
 
   if (normalizedVariant.value === "compact") {

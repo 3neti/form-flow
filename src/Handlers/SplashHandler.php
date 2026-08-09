@@ -90,6 +90,9 @@ class SplashHandler implements FormHandlerInterface, FormHandlerPreviewInterface
             'claim_experience_warnings' => array_values(array_filter([
                 $splashAlreadyConsumed ? 'duplicate_splash_candidate' : null,
             ])),
+            'ui_layout' => $step->config['ui_layout'] ?? [],
+            'package_versions' => $step->config['package_versions'] ?? [],
+            'show_package_versions' => (bool) ($step->config['show_package_versions'] ?? false),
             'preview_mode' => (bool) ($context['preview_mode'] ?? false),
         ];
 
@@ -104,8 +107,8 @@ class SplashHandler implements FormHandlerInterface, FormHandlerPreviewInterface
             $props['is_default_splash'] = true;
             $props['content'] = '';
             $props['voucher_code'] = $voucherCode;
-            $props['app_name'] = config('app.name', 'Laravel');
-            $props['app_logo'] = config('splash.app_logo', '/images/logo-orange.png');
+            $props['app_name'] = $step->config['app_name'] ?? config('app.name', 'Laravel');
+            $props['app_logo'] = $step->config['app_logo'] ?? config('splash.app_logo', '/images/logo-orange.png');
             $props['app_author'] = config('splash.app_author', '3neti R&D OPC');
             $props['copyright_text'] = "© {$copyrightYear} {$copyrightHolder}";
         } else {

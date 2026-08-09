@@ -110,6 +110,12 @@ class FormHandler implements FormHandlerInterface, FormHandlerPreviewInterface
             'claim_experience' => $context['claim_experience'] ?? null,
             'claim_workflow' => $resolvedConfig['claim_workflow'] ?? null,
             'ui_variant' => $resolvedConfig['ui_variant'] ?? config('form-flow.ui.variant', 'default'),
+            'action_placement' => $resolvedConfig['action_placement'] ?? null,
+            'ui_layout' => $resolvedConfig['ui_layout'] ?? [],
+            'app_name' => $resolvedConfig['app_name'] ?? null,
+            'app_logo' => $resolvedConfig['app_logo'] ?? null,
+            'package_versions' => $resolvedConfig['package_versions'] ?? [],
+            'show_package_versions' => (bool) ($resolvedConfig['show_package_versions'] ?? false),
             'preview_mode' => (bool) ($context['preview_mode'] ?? false),
         ];
     }
