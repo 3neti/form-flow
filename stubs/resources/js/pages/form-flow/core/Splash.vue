@@ -2,10 +2,10 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { router, Head } from "@inertiajs/vue3";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { initializeTheme } from "@/composables/useTheme";
+import FormFlowActions from "./components/FormFlowActions.vue";
 import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";
 
 initializeTheme();
@@ -49,6 +49,7 @@ interface Props {
   copyright_text?: string;
   package_versions?: PackageVersion[] | Record<string, string> | null;
   show_package_versions?: boolean;
+  action_placement?: "inline" | "bottom" | "bottom_sticky" | "viewport_bottom" | string | null;
   claim_experience?: ClaimExperience | null;
   preview_mode?: boolean;
 }
@@ -65,6 +66,7 @@ const props = withDefaults(defineProps<Props>(), {
   copyright_text: undefined,
   package_versions: undefined,
   show_package_versions: false,
+  action_placement: undefined,
   claim_experience: undefined,
   preview_mode: false,
 });
@@ -248,15 +250,6 @@ if (import.meta.env.DEV && props.claim_experience) {
         </div>
 
         <div class="w-full max-w-xs space-y-3">
-          <Button
-            @click="handleContinue"
-            :disabled="submitting"
-            class="w-full rounded-full"
-          >
-            <span v-if="submitting">Please wait…</span>
-            <span v-else>{{ button_label }}</span>
-          </Button>
-
           <div v-if="timeoutSeconds > 0" class="space-y-1">
             <div class="h-1 w-full overflow-hidden rounded-full bg-muted">
               <div
@@ -289,8 +282,20 @@ if (import.meta.env.DEV && props.claim_experience) {
           <FormFlowVersionStrip
             :show="show_package_versions"
             :package-versions="package_versions"
+            context="splash"
           />
         </footer>
+
+        <FormFlowActions
+          :action-placement="action_placement || 'viewport_bottom'"
+          :processing="submitting"
+          :primary-disabled="submitting"
+          :show-secondary="false"
+          :primary-label="button_label"
+          primary-type="button"
+          variant="immersive"
+          @primary="handleContinue"
+        />
       </CardContent>
     </Card>
   </div>
@@ -366,21 +371,21 @@ if (import.meta.env.DEV && props.claim_experience) {
         </div>
 
         <!-- Continue button -->
-        <div class="flex justify-center">
-          <Button
-            @click="handleContinue"
-            :disabled="submitting"
-            :size="isDisburseFlow ? 'default' : 'lg'"
-            :class="isDisburseFlow ? 'w-full rounded-full' : 'min-w-[200px]'"
-          >
-            <span v-if="submitting">Please wait…</span>
-            <span v-else>{{ button_label }}</span>
-          </Button>
-        </div>
-
         <FormFlowVersionStrip
           :show="show_package_versions"
           :package-versions="package_versions"
+          context="splash"
+        />
+
+        <FormFlowActions
+          :action-placement="action_placement || 'viewport_bottom'"
+          :processing="submitting"
+          :primary-disabled="submitting"
+          :show-secondary="false"
+          :primary-label="button_label"
+          primary-type="button"
+          :variant="isDisburseFlow ? 'immersive' : 'default'"
+          @primary="handleContinue"
         />
       </CardContent>
     </Card>

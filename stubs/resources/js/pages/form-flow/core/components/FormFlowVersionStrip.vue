@@ -11,11 +11,13 @@ const props = withDefaults(
     packageVersions?: PackageVersion[] | Record<string, string> | null;
     show?: boolean;
     label?: string;
+    context?: string | null;
   }>(),
   {
     packageVersions: null,
     show: false,
     label: "QA build",
+    context: null,
   },
 );
 
@@ -36,33 +38,65 @@ const normalizedPackageVersions = computed<PackageVersion[]>(() => {
 });
 
 const shortPackageName = (name: string): string =>
-  name.replace(/^3neti\//, "").replace(/^form-handler-/, "");
+  name
+    .replace(/^3neti\/x-change$/, "x-change")
+    .replace(/^3neti\/form-flow$/, "form-flow")
+    .replace(/^3neti\/form-handler-/, "")
+    .replace(/^3neti\//, "");
+
+const packageNamesForContext = (context?: string | null): string[] => {
+  const base = ["3neti/x-change", "3neti/form-flow"];
+
+  switch (context) {
+    case "otp":
+      return [...base, "3neti/form-handler-otp"];
+    case "selfie":
+      return [...base, "3neti/form-handler-selfie"];
+    case "signature":
+      return [...base, "3neti/form-handler-signature"];
+    case "location":
+      return [...base, "3neti/form-handler-location"];
+    case "kyc":
+      return [...base, "3neti/form-handler-kyc"];
+    default:
+      return base;
+  }
+};
+
+const visiblePackageVersions = computed<PackageVersion[]>(() => {
+  const allowedNames = packageNamesForContext(props.context);
+  const filtered = normalizedPackageVersions.value.filter((packageVersion) =>
+    allowedNames.includes(packageVersion.name),
+  );
+
+  return filtered.length > 0 ? filtered : normalizedPackageVersions.value;
+});
 </script>
 
 <template>
   <div
-    v-if="props.show && normalizedPackageVersions.length > 0"
-    class="mx-auto mt-3 flex w-full max-w-md flex-col items-center gap-2 text-center"
+    v-if="props.show && visiblePackageVersions.length > 0"
+    class="mx-auto mt-2 flex w-full max-w-md items-center justify-center gap-1.5 overflow-hidden text-center text-[9px] leading-none text-muted-foreground/70"
     data-testid="form-flow-package-version-strip"
     aria-label="Form flow package versions"
   >
     <p
-      class="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/60"
+      class="shrink-0 font-semibold uppercase tracking-[0.12em] text-muted-foreground/60"
     >
       {{ props.label }}
     </p>
 
-    <div class="flex max-w-full flex-wrap justify-center gap-1.5">
+    <div class="flex min-w-0 max-w-full flex-nowrap justify-center gap-1.5 overflow-hidden">
       <span
-        v-for="packageVersion in normalizedPackageVersions"
+        v-for="packageVersion in visiblePackageVersions"
         :key="packageVersion.name"
-        class="inline-flex max-w-full items-center gap-1 rounded-full border border-border/70 bg-background/80 px-2 py-1 text-[10px] leading-none text-muted-foreground shadow-sm"
+        class="inline-flex min-w-0 shrink items-center gap-0.5 truncate"
         :title="`${packageVersion.name} ${packageVersion.version}`"
       >
-        <span class="max-w-28 truncate font-medium text-foreground/75">
+        <span class="truncate font-medium text-foreground/65">
           {{ shortPackageName(packageVersion.name) }}
         </span>
-        <span class="font-mono text-muted-foreground/80">
+        <span class="shrink-0 font-mono text-muted-foreground/70">
           {{ packageVersion.version }}
         </span>
       </span>

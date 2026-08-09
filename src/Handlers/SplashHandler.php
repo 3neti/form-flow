@@ -90,6 +90,7 @@ class SplashHandler implements FormHandlerInterface, FormHandlerPreviewInterface
             'claim_experience_warnings' => array_values(array_filter([
                 $splashAlreadyConsumed ? 'duplicate_splash_candidate' : null,
             ])),
+            'action_placement' => $step->config['action_placement'] ?? null,
             'ui_layout' => $step->config['ui_layout'] ?? [],
             'package_versions' => $step->config['package_versions'] ?? [],
             'show_package_versions' => (bool) ($step->config['show_package_versions'] ?? false),

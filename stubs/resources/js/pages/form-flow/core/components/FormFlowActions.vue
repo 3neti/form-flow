@@ -8,7 +8,11 @@ import {
   type FormFlowUiVariant,
 } from "./formFlowUiVariant";
 
-type FormFlowActionPlacement = "inline" | "bottom" | "bottom_sticky";
+type FormFlowActionPlacement =
+  | "inline"
+  | "bottom"
+  | "bottom_sticky"
+  | "viewport_bottom";
 
 const props = withDefaults(
   defineProps<{
@@ -46,6 +50,7 @@ const normalizedVariant = computed(() =>
 
 const normalizedActionPlacement = computed<FormFlowActionPlacement>(() =>
   props.actionPlacement === "bottom_sticky" ||
+  props.actionPlacement === "viewport_bottom" ||
   props.actionPlacement === "bottom" ||
   props.actionPlacement === "inline"
     ? props.actionPlacement
@@ -55,7 +60,19 @@ const normalizedActionPlacement = computed<FormFlowActionPlacement>(() =>
 );
 
 const containerClass = computed(() => {
-  const columns = props.showSecondary ? "sm:grid-cols-2" : "grid-cols-1";
+  const columns =
+    normalizedActionPlacement.value === "viewport_bottom" && props.showSecondary
+      ? "grid-cols-2"
+      : props.showSecondary
+        ? "sm:grid-cols-2"
+        : "grid-cols-1";
+
+  if (normalizedActionPlacement.value === "viewport_bottom") {
+    return [
+      "fixed inset-x-0 bottom-[max(0.2in,calc(env(safe-area-inset-bottom)+1rem))] z-30 mx-auto grid w-full max-w-md gap-2 px-5 sm:max-w-lg",
+      columns,
+    ];
+  }
 
   if (normalizedActionPlacement.value === "bottom_sticky") {
     return [
@@ -76,13 +93,21 @@ const containerClass = computed(() => {
 });
 
 const buttonClass = computed(() =>
-  normalizedVariant.value === "immersive"
+  normalizedActionPlacement.value === "viewport_bottom"
+    ? "h-11 w-full rounded-full shadow-lg shadow-foreground/10"
+    : normalizedVariant.value === "immersive"
     ? "h-11 w-full rounded-full"
     : "w-full rounded-full",
 );
 </script>
 
 <template>
+  <div
+    v-if="normalizedActionPlacement === 'viewport_bottom'"
+    class="h-24 shrink-0"
+    aria-hidden="true"
+  />
+
   <div :class="containerClass">
     <Button
       v-if="props.showSecondary"

@@ -134,7 +134,13 @@ interface Props {
   claim_experience?: ClaimExperience | null;
   claim_workflow?: Record<string, unknown> | null;
   ui_variant?: FormFlowUiVariant | string | null;
-  action_placement?: "inline" | "bottom" | "bottom_sticky" | string | null;
+  action_placement?:
+    | "inline"
+    | "bottom"
+    | "bottom_sticky"
+    | "viewport_bottom"
+    | string
+    | null;
   ui_layout?: Record<string, unknown> | null;
   app_name?: string | null;
   app_logo?: string | null;
@@ -143,6 +149,7 @@ interface Props {
     | Record<string, string>
     | null;
   show_package_versions?: boolean;
+  package_version_context?: string | null;
   preview_mode?: boolean;
 }
 
@@ -160,6 +167,7 @@ const props = withDefaults(defineProps<Props>(), {
   app_logo: undefined,
   package_versions: undefined,
   show_package_versions: false,
+  package_version_context: "form",
   preview_mode: false,
 });
 
@@ -1445,6 +1453,7 @@ if (import.meta.env.DEV && props.claim_experience) {
     <FormFlowVersionStrip
       :show="props.show_package_versions"
       :package-versions="props.package_versions"
+      :context="props.package_version_context"
     />
   </div>
 </template>

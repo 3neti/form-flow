@@ -29,6 +29,7 @@ const props = withDefaults(
     appLogo?: string | null;
     packageVersions?: PackageVersion[] | Record<string, string> | null;
     showPackageVersions?: boolean;
+    versionContext?: string | null;
     screenClass?: HTMLAttributes["class"];
     innerClass?: HTMLAttributes["class"];
     cardClass?: HTMLAttributes["class"];
@@ -42,6 +43,7 @@ const props = withDefaults(
     appLogo: null,
     packageVersions: null,
     showPackageVersions: false,
+    versionContext: null,
     screenClass: "",
     innerClass: "",
     cardClass: "",
@@ -174,6 +176,7 @@ const contentVariantClass = computed(() => {
       <FormFlowVersionStrip
         :show="props.showPackageVersions"
         :package-versions="props.packageVersions"
+        :context="props.versionContext"
       />
     </div>
   </div>

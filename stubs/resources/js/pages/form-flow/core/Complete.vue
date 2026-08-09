@@ -16,6 +16,7 @@ import { computed, ref, onUnmounted } from "vue";
 import { useFormFlowSummary } from "@/composables/useFormFlowSummary";
 import { initializeTheme } from "@/composables/useTheme";
 import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";
+import FormFlowActions from "./components/FormFlowActions.vue";
 
 initializeTheme();
 
@@ -266,6 +267,7 @@ if (import.meta.env.DEV && props.claim_experience) {
         <FormFlowVersionStrip
           :show="props.show_package_versions"
           :package-versions="props.package_versions"
+          context="complete"
         />
       </div>
     </div>
@@ -328,14 +330,16 @@ if (import.meta.env.DEV && props.claim_experience) {
             </div>
           </div>
 
-          <!-- Confirm button -->
-          <Button
-            @click="handleClose"
-            :disabled="isProcessing"
-            class="w-full rounded-full"
-          >
-            {{ confirmationLabel }}
-          </Button>
+          <FormFlowActions
+            action-placement="viewport_bottom"
+            :primary-disabled="isProcessing"
+            :processing="isProcessing"
+            :show-secondary="false"
+            :primary-label="confirmationLabel"
+            primary-type="button"
+            variant="immersive"
+            @primary="handleClose"
+          />
 
           <!-- Reference ID: subtle footer -->
           <p
@@ -348,6 +352,7 @@ if (import.meta.env.DEV && props.claim_experience) {
       <FormFlowVersionStrip
         :show="props.show_package_versions"
         :package-versions="props.package_versions"
+        context="complete"
       />
     </div>
   </template>
@@ -486,6 +491,7 @@ if (import.meta.env.DEV && props.claim_experience) {
           <FormFlowVersionStrip
             :show="props.show_package_versions"
             :package-versions="props.package_versions"
+            context="complete"
           />
         </CardContent>
       </template>
