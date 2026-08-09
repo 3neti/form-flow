@@ -8,12 +8,15 @@ import {
   type FormFlowUiVariant,
 } from "./formFlowUiVariant";
 
+type FormFlowActionPlacement = "inline" | "bottom_sticky";
+
 const props = withDefaults(
   defineProps<{
     primaryLabel?: string;
     secondaryLabel?: string;
     primaryType?: ButtonHTMLAttributes["type"];
     variant?: FormFlowUiVariant | string | null;
+    actionPlacement?: FormFlowActionPlacement | string | null;
     primaryDisabled?: boolean;
     secondaryDisabled?: boolean;
     processing?: boolean;
@@ -24,6 +27,7 @@ const props = withDefaults(
     secondaryLabel: "Back",
     primaryType: "submit",
     variant: "default",
+    actionPlacement: null,
     primaryDisabled: false,
     secondaryDisabled: false,
     processing: false,
@@ -40,10 +44,18 @@ const normalizedVariant = computed(() =>
   normalizeFormFlowUiVariant(props.variant),
 );
 
+const normalizedActionPlacement = computed<FormFlowActionPlacement>(() =>
+  props.actionPlacement === "bottom_sticky" || props.actionPlacement === "inline"
+    ? props.actionPlacement
+    : normalizedVariant.value === "immersive"
+      ? "bottom_sticky"
+      : "inline",
+);
+
 const containerClass = computed(() => {
   const columns = props.showSecondary ? "sm:grid-cols-2" : "grid-cols-1";
 
-  if (normalizedVariant.value === "immersive") {
+  if (normalizedActionPlacement.value === "bottom_sticky") {
     return [
       "sticky bottom-0 z-10 -mx-4 mt-auto grid gap-3 border-t bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/85 sm:-mx-5 sm:px-5",
       columns,

@@ -9,7 +9,10 @@ it('bounds the default splash logo in the published Vue stub', function (): void
 
     expect($stub)
         ->toContain('form-flow-default-splash-logo')
-        ->toContain('max-width: 5rem;')
-        ->toContain('max-height: 5rem;')
+        ->toContain('class="form-flow-default-splash-logo mb-4 w-auto object-contain')
+        ->toContain('width: auto;')
+        ->toContain('height: auto;')
+        ->toContain('max-width: min(14rem, 70vw);')
+        ->toContain('max-height: 6rem;')
         ->toContain('object-fit: contain;');
 });

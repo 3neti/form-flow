@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,7 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, Loader2 } from "lucide-vue-next";
+import { AlertCircle } from "lucide-vue-next";
 import {
   CountrySelect,
   SettlementRailSelect,
@@ -38,6 +37,7 @@ import {
   claimWorkflowSummaryText,
   normalizeClaimWorkflow,
 } from "@/components/x-change/formFlowClaimWorkflow";
+import FormFlowActions from "./components/FormFlowActions.vue";
 import { normalizeFormFlowUiVariant } from "./components/formFlowUiVariant";
 import type { FormFlowUiVariant } from "./components/formFlowUiVariant";
 
@@ -133,6 +133,7 @@ interface Props {
   claim_experience?: ClaimExperience | null;
   claim_workflow?: Record<string, unknown> | null;
   ui_variant?: FormFlowUiVariant | string | null;
+  action_placement?: "inline" | "bottom_sticky" | string | null;
   preview_mode?: boolean;
 }
 
@@ -144,6 +145,7 @@ const props = withDefaults(defineProps<Props>(), {
   claim_experience: undefined,
   claim_workflow: undefined,
   ui_variant: "default",
+  action_placement: undefined,
   preview_mode: false,
 });
 
@@ -226,25 +228,6 @@ const formClass = computed(() => {
 
   return isCompactUi.value ? "space-y-4" : "space-y-6";
 });
-const actionContainerClass = computed(() => {
-  if (isImmersiveUi.value) {
-    return "sticky bottom-0 z-10 -mx-4 mt-auto grid gap-3 border-t bg-card/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-card/85 sm:-mx-5 sm:grid-cols-2 sm:px-5";
-  }
-
-  return isCompactUi.value
-    ? "grid gap-2 pt-3 sm:grid-cols-2"
-    : "flex gap-3 pt-4";
-});
-const secondaryButtonClass = computed(() =>
-  isDisburseFlow.value || isImmersiveUi.value
-    ? "w-full rounded-full"
-    : "flex-1",
-);
-const primaryButtonClass = computed(() =>
-  isDisburseFlow.value || isImmersiveUi.value
-    ? "w-full rounded-full"
-    : "flex-1",
-);
 
 // Initialize form data - must happen synchronously for Vue reactivity
 const initializeFormData = () => {
@@ -1413,26 +1396,17 @@ if (import.meta.env.DEV && props.claim_experience) {
             </div>
           </div>
 
-          <!-- Submit Buttons -->
-          <div :class="actionContainerClass">
-            <Button
-              type="button"
-              variant="outline"
-              :class="secondaryButtonClass"
-              @click="handleCancel"
-              :disabled="submitting"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              :class="primaryButtonClass"
-              :disabled="submitting"
-            >
-              <Loader2 v-if="submitting" class="h-4 w-4 animate-spin mr-2" />
-              {{ submitting ? "Submitting..." : submitLabel }}
-            </Button>
-          </div>
+          <FormFlowActions
+            primary-type="submit"
+            secondary-label="Cancel"
+            :primary-label="submitLabel"
+            :variant="uiVariant"
+            :action-placement="props.action_placement"
+            :primary-disabled="submitting"
+            :secondary-disabled="submitting"
+            :processing="submitting"
+            @secondary="handleCancel"
+          />
         </form>
       </CardContent>
     </Card>

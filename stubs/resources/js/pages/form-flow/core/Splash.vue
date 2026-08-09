@@ -211,7 +211,7 @@ if (import.meta.env.DEV && props.claim_experience) {
           v-if="app_logo"
           :src="app_logo"
           :alt="app_name ?? 'Logo'"
-          class="form-flow-default-splash-logo mb-4 h-20 w-20 object-contain drop-shadow-lg animate-fade-in sm:h-24 sm:w-24"
+          class="form-flow-default-splash-logo mb-4 w-auto object-contain drop-shadow-lg animate-fade-in"
         />
 
         <p
@@ -390,19 +390,17 @@ if (import.meta.env.DEV && props.claim_experience) {
 
 .form-flow-default-splash-logo {
   display: block;
-  width: 5rem;
-  height: 5rem;
-  max-width: 5rem;
-  max-height: 5rem;
+  width: auto;
+  height: auto;
+  max-width: min(14rem, 70vw);
+  max-height: 6rem;
   object-fit: contain;
 }
 
 @media (min-width: 640px) {
   .form-flow-default-splash-logo {
-    width: 6rem;
-    height: 6rem;
-    max-width: 6rem;
-    max-height: 6rem;
+    max-width: 16rem;
+    max-height: 7rem;
   }
 }
 
