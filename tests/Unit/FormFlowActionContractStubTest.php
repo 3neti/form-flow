@@ -26,10 +26,11 @@ it('uses shared form flow actions from the generic form stub', function (): void
 
     expect($stub)
         ->toContain('import FormFlowActions from "./components/FormFlowActions.vue";')
+        ->toContain('import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";')
         ->toContain('action_placement?: "inline" | "bottom" | "bottom_sticky" | string | null;')
         ->toContain('<FormFlowActions')
         ->toContain(':action-placement="props.action_placement"')
-        ->toContain('data-testid="form-flow-package-version-strip"')
+        ->toContain('<FormFlowVersionStrip')
         ->not->toContain('const actionContainerClass = computed')
         ->not->toContain('const secondaryButtonClass = computed')
         ->not->toContain('const primaryButtonClass = computed');
@@ -41,8 +42,23 @@ it('exposes the package version strip in the shared form flow screen stub', func
     );
 
     expect($stub)
+        ->toContain('import FormFlowVersionStrip from "./FormFlowVersionStrip.vue";')
         ->toContain('packageVersions?: PackageVersion[] | Record<string, string> | null;')
         ->toContain('showPackageVersions?: boolean;')
+        ->toContain('<FormFlowVersionStrip')
+        ->toContain(':show="props.showPackageVersions"')
+        ->toContain(':package-versions="props.packageVersions"');
+});
+
+it('renders package versions as a compact QA chip strip', function (): void {
+    $stub = file_get_contents(
+        dirname(__DIR__, 2).'/stubs/resources/js/pages/form-flow/core/components/FormFlowVersionStrip.vue',
+    );
+
+    expect($stub)
         ->toContain('data-testid="form-flow-package-version-strip"')
-        ->toContain('props.showPackageVersions && normalizedPackageVersions.length > 0');
+        ->toContain('QA build')
+        ->toContain('shortPackageName')
+        ->toContain('replace(/^3neti\\//, "")')
+        ->toContain('rounded-full border border-border/70');
 });

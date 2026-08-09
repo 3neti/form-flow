@@ -12,6 +12,7 @@ import {
   normalizeFormFlowUiVariant,
   type FormFlowUiVariant,
 } from "./formFlowUiVariant";
+import FormFlowVersionStrip from "./FormFlowVersionStrip.vue";
 
 interface PackageVersion {
   name: string;
@@ -128,21 +129,6 @@ const contentVariantClass = computed(() => {
   return "";
 });
 
-const normalizedPackageVersions = computed<PackageVersion[]>(() => {
-  const versions = props.packageVersions;
-
-  if (!versions) {
-    return [];
-  }
-
-  if (Array.isArray(versions)) {
-    return versions.filter((version) => version.name && version.version);
-  }
-
-  return Object.entries(versions)
-    .filter(([, version]) => typeof version === "string" && version.length > 0)
-    .map(([name, version]) => ({ name, version }));
-});
 </script>
 
 <template>
@@ -185,19 +171,10 @@ const normalizedPackageVersions = computed<PackageVersion[]>(() => {
         </CardContent>
       </Card>
 
-      <p
-        v-if="props.showPackageVersions && normalizedPackageVersions.length > 0"
-        class="mt-3 text-center text-[10px] font-medium text-muted-foreground/70"
-        data-testid="form-flow-package-version-strip"
-      >
-        <span
-          v-for="(packageVersion, index) in normalizedPackageVersions"
-          :key="packageVersion.name"
-        >
-          <span v-if="index > 0" aria-hidden="true"> · </span>
-          <span>{{ packageVersion.name }} {{ packageVersion.version }}</span>
-        </span>
-      </p>
+      <FormFlowVersionStrip
+        :show="props.showPackageVersions"
+        :package-versions="props.packageVersions"
+      />
     </div>
   </div>
 </template>

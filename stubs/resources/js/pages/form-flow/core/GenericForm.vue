@@ -38,6 +38,7 @@ import {
   normalizeClaimWorkflow,
 } from "@/components/x-change/formFlowClaimWorkflow";
 import FormFlowActions from "./components/FormFlowActions.vue";
+import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";
 import { normalizeFormFlowUiVariant } from "./components/formFlowUiVariant";
 import type { FormFlowUiVariant } from "./components/formFlowUiVariant";
 
@@ -122,11 +123,6 @@ interface ClaimExperience {
   diagnostics?: ClaimExperienceDiagnostics;
 }
 
-interface PackageVersion {
-  name: string;
-  version: string;
-}
-
 interface Props {
   flow_id: string;
   step_index: number;
@@ -142,7 +138,10 @@ interface Props {
   ui_layout?: Record<string, unknown> | null;
   app_name?: string | null;
   app_logo?: string | null;
-  package_versions?: PackageVersion[] | Record<string, string> | null;
+  package_versions?:
+    | { name: string; version: string }[]
+    | Record<string, string>
+    | null;
   show_package_versions?: boolean;
   preview_mode?: boolean;
 }
@@ -183,21 +182,6 @@ const submitLabel = computed(() =>
   claimWorkflowConfirmationLabel(claimWorkflow.value),
 );
 const uiVariant = computed(() => normalizeFormFlowUiVariant(props.ui_variant));
-const normalizedPackageVersions = computed<PackageVersion[]>(() => {
-  const versions = props.package_versions;
-
-  if (!versions) {
-    return [];
-  }
-
-  if (Array.isArray(versions)) {
-    return versions.filter((version) => version.name && version.version);
-  }
-
-  return Object.entries(versions)
-    .filter(([, version]) => typeof version === "string" && version.length > 0)
-    .map(([name, version]) => ({ name, version }));
-});
 const isCompactUi = computed(() => uiVariant.value === "compact");
 const isImmersiveUi = computed(() => uiVariant.value === "immersive");
 const screenClass = computed(() => {
@@ -206,7 +190,7 @@ const screenClass = computed(() => {
   }
 
   if (isImmersiveUi.value) {
-    return "min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-3 py-3 sm:px-5 sm:py-5";
+    return "min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-3 py-4 sm:px-5 sm:py-5";
   }
 
   if (isCompactUi.value) {
@@ -228,7 +212,7 @@ const cardClass = computed(() => {
   }
 
   if (isImmersiveUi.value) {
-    return "mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-xl flex-col border-0 bg-card/90 shadow-sm sm:min-h-[calc(100vh-2.5rem)]";
+    return "mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-xl flex-col border-0 bg-card/90 shadow-sm sm:min-h-[calc(100vh-2.5rem)]";
   }
 
   if (isCompactUi.value) {
@@ -239,21 +223,21 @@ const cardClass = computed(() => {
 });
 const cardHeaderClass = computed(() => {
   if (isImmersiveUi.value) {
-    return "px-4 py-4 sm:px-5";
+    return "px-4 pb-2 pt-4 sm:px-5";
   }
 
   return isCompactUi.value ? "px-5 py-4" : "";
 });
 const cardContentClass = computed(() => {
   if (isImmersiveUi.value) {
-    return "flex flex-1 flex-col px-4 pb-0 sm:px-5";
+    return "flex flex-1 flex-col px-4 pb-4 sm:px-5";
   }
 
   return isCompactUi.value ? "px-5 pb-5" : "";
 });
 const formClass = computed(() => {
   if (isImmersiveUi.value) {
-    return "flex flex-1 flex-col gap-4";
+    return "flex flex-1 flex-col gap-3";
   }
 
   return isCompactUi.value ? "space-y-4" : "space-y-6";
@@ -709,7 +693,7 @@ if (import.meta.env.DEV && props.claim_experience) {
             {{ props.app_name }}
           </p>
         </div>
-        <CardTitle>{{ title }}</CardTitle>
+        <CardTitle class="text-lg sm:text-xl">{{ title }}</CardTitle>
       </CardHeader>
       <CardContent :class="cardContentClass">
         <form @submit.prevent="handleSubmit" :class="formClass">
@@ -724,7 +708,7 @@ if (import.meta.env.DEV && props.claim_experience) {
 
           <div
             v-if="claimWorkflow"
-            class="rounded-lg border border-primary/15 bg-primary/5 p-4"
+            class="rounded-lg border border-primary/15 bg-primary/5 p-3"
             data-testid="form-flow-claim-workflow-panel"
           >
             <div class="space-y-1">
@@ -747,7 +731,7 @@ if (import.meta.env.DEV && props.claim_experience) {
 
             <dl
               v-if="claimWorkflowReview.length > 0"
-              class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"
+              class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2"
             >
               <div
                 v-for="item in claimWorkflowReview"
@@ -771,7 +755,7 @@ if (import.meta.env.DEV && props.claim_experience) {
           <!-- Summary Badges Section -->
           <div
             v-if="summaryFields.length > 0"
-            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6"
+            class="mb-3 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3"
           >
             <div
               v-for="field in summaryFields"
@@ -842,7 +826,7 @@ if (import.meta.env.DEV && props.claim_experience) {
           </div>
 
           <!-- Hero Fields Section -->
-          <div v-if="heroFields.length > 0" class="space-y-6 mb-8">
+          <div v-if="heroFields.length > 0" class="mb-4 space-y-4">
             <div
               v-for="field in heroFields"
               :key="field.name"
@@ -933,7 +917,7 @@ if (import.meta.env.DEV && props.claim_experience) {
               heroFields.length > 0 &&
               (Object.keys(groupedFields).length > 0 || normalFields.length > 0)
             "
-            class="relative my-8"
+            class="relative my-4"
           >
             <Separator />
             <div
@@ -955,9 +939,9 @@ if (import.meta.env.DEV && props.claim_experience) {
             v-for="(groupFields, groupName, groupIndex) in groupedFields"
             :key="groupName"
           >
-            <div class="space-y-4">
-              <fieldset class="border rounded-lg p-4 bg-muted/5">
-                <legend class="text-sm font-medium text-muted-foreground px-2">
+            <div class="space-y-3">
+              <fieldset class="rounded-lg border bg-muted/5 px-4 pb-4 pt-2">
+                <legend class="px-2 text-sm font-medium text-muted-foreground">
                   {{
                     groupName
                       .replace("_", " ")
@@ -965,7 +949,7 @@ if (import.meta.env.DEV && props.claim_experience) {
                   }}
                 </legend>
 
-                <div class="space-y-4 mt-2">
+                <div class="mt-2 space-y-3">
                   <div
                     v-for="field in groupFields"
                     :key="field.name"
@@ -1176,7 +1160,7 @@ if (import.meta.env.DEV && props.claim_experience) {
                 voucherCode &&
                 heroFields.length === 0
               "
-              class="relative my-8"
+              class="relative my-4"
             >
               <Separator />
 
@@ -1195,7 +1179,7 @@ if (import.meta.env.DEV && props.claim_experience) {
           </template>
 
           <!-- Normal Fields (non-grouped, non-hero, non-badge) -->
-          <div v-if="normalFields.length > 0" class="space-y-4">
+          <div v-if="normalFields.length > 0" class="space-y-3">
             <div
               v-for="field in normalFields"
               :key="field.name"
@@ -1458,18 +1442,9 @@ if (import.meta.env.DEV && props.claim_experience) {
       </CardContent>
     </Card>
 
-    <p
-      v-if="props.show_package_versions && normalizedPackageVersions.length > 0"
-      class="mt-3 text-center text-[10px] font-medium text-muted-foreground/70"
-      data-testid="form-flow-package-version-strip"
-    >
-      <span
-        v-for="(packageVersion, index) in normalizedPackageVersions"
-        :key="packageVersion.name"
-      >
-        <span v-if="index > 0" aria-hidden="true"> · </span>
-        <span>{{ packageVersion.name }} {{ packageVersion.version }}</span>
-      </span>
-    </p>
+    <FormFlowVersionStrip
+      :show="props.show_package_versions"
+      :package-versions="props.package_versions"
+    />
   </div>
 </template>
