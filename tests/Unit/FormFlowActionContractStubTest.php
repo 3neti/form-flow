@@ -50,6 +50,20 @@ it('exposes the package version strip in the shared form flow screen stub', func
         ->toContain(':package-versions="props.packageVersions"');
 });
 
+it('exposes the package version strip in the completion screen stub', function (): void {
+    $stub = file_get_contents(
+        dirname(__DIR__, 2).'/stubs/resources/js/pages/form-flow/core/Complete.vue',
+    );
+
+    expect($stub)
+        ->toContain('import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";')
+        ->toContain('package_versions?:')
+        ->toContain('show_package_versions?: boolean;')
+        ->toContain('<FormFlowVersionStrip')
+        ->toContain(':show="props.show_package_versions"')
+        ->toContain(':package-versions="props.package_versions"');
+});
+
 it('renders package versions as a compact QA chip strip', function (): void {
     $stub = file_get_contents(
         dirname(__DIR__, 2).'/stubs/resources/js/pages/form-flow/core/components/FormFlowVersionStrip.vue',

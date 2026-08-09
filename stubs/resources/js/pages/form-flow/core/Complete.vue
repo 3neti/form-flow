@@ -15,6 +15,7 @@ import { CheckCircle2, Clock, AlertCircle } from "lucide-vue-next";
 import { computed, ref, onUnmounted } from "vue";
 import { useFormFlowSummary } from "@/composables/useFormFlowSummary";
 import { initializeTheme } from "@/composables/useTheme";
+import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";
 
 initializeTheme();
 
@@ -37,6 +38,11 @@ interface ClaimExperience {
   diagnostics?: ClaimExperienceDiagnostics;
 }
 
+interface PackageVersion {
+  name: string;
+  version: string;
+}
+
 interface Props {
   flow_id: string;
   state: {
@@ -49,9 +55,17 @@ interface Props {
   claim_workflow?: {
     confirmation_label?: string;
   } | null;
+  package_versions?:
+    | PackageVersion[]
+    | Record<string, string>
+    | null;
+  show_package_versions?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  package_versions: undefined,
+  show_package_versions: false,
+});
 
 const confirmationLabel = computed(
   () => props.claim_workflow?.confirmation_label || "Confirm Redemption",
@@ -249,6 +263,10 @@ if (import.meta.env.DEV && props.claim_experience) {
         >
           The bank is taking longer than usual. Please keep waiting.
         </p>
+        <FormFlowVersionStrip
+          :show="props.show_package_versions"
+          :package-versions="props.package_versions"
+        />
       </div>
     </div>
 
@@ -327,6 +345,10 @@ if (import.meta.env.DEV && props.claim_experience) {
           </p>
         </CardContent>
       </Card>
+      <FormFlowVersionStrip
+        :show="props.show_package_versions"
+        :package-versions="props.package_versions"
+      />
     </div>
   </template>
 
@@ -461,6 +483,10 @@ if (import.meta.env.DEV && props.claim_experience) {
               Back to Demo
             </Button>
           </div>
+          <FormFlowVersionStrip
+            :show="props.show_package_versions"
+            :package-versions="props.package_versions"
+          />
         </CardContent>
       </template>
     </Card>
