@@ -418,14 +418,14 @@ if (import.meta.env.DEV && props.claim_experience) {
   width: auto;
   height: auto;
   max-width: min(14rem, 70vw);
-  max-height: 6rem;
+  max-height: 4.5rem;
   object-fit: contain;
 }
 
 @media (min-width: 640px) {
   .form-flow-default-splash-logo {
-    max-width: 16rem;
-    max-height: 7rem;
+    max-width: 14rem;
+    max-height: 4.5rem;
   }
 }
 

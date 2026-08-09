@@ -67,6 +67,7 @@ it('exposes the package version strip in the completion screen stub', function (
         ->toContain('import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";')
         ->toContain('package_versions?:')
         ->toContain('show_package_versions?: boolean;')
+        ->toContain('ReceiptText')
         ->toContain('<FormFlowVersionStrip')
         ->toContain(':show="props.show_package_versions"')
         ->toContain(':package-versions="props.package_versions"');

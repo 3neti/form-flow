@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, Clock, AlertCircle } from "lucide-vue-next";
+import { CheckCircle2, Clock, AlertCircle, ReceiptText } from "lucide-vue-next";
 import { computed, ref, onUnmounted } from "vue";
 import { useFormFlowSummary } from "@/composables/useFormFlowSummary";
 import { initializeTheme } from "@/composables/useTheme";
@@ -281,7 +281,7 @@ if (import.meta.env.DEV && props.claim_experience) {
         <CardContent class="space-y-8 px-6 py-8">
           <!-- Hero: amount + voucher code -->
           <div class="text-center pt-4 space-y-3">
-            <CheckCircle2 class="h-8 w-8 text-green-500 mx-auto" />
+            <ReceiptText class="h-8 w-8 text-primary mx-auto" />
             <p
               v-if="heroData.amount"
               class="text-4xl font-bold tracking-tight text-foreground"

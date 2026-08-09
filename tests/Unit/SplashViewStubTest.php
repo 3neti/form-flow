@@ -13,6 +13,6 @@ it('bounds the default splash logo in the published Vue stub', function (): void
         ->toContain('width: auto;')
         ->toContain('height: auto;')
         ->toContain('max-width: min(14rem, 70vw);')
-        ->toContain('max-height: 6rem;')
+        ->toContain('max-height: 4.5rem;')
         ->toContain('object-fit: contain;');
 });
