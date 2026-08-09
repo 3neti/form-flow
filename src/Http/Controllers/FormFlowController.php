@@ -144,6 +144,8 @@ class FormFlowController extends Controller
                 'callback_triggered' => $callbackUrl !== null,
                 'claim_experience' => $this->claimExperience($state),
                 'claim_workflow' => $this->claimWorkflow($state),
+                'package_versions' => $this->packageVersions($state),
+                'show_package_versions' => $this->showPackageVersions($state),
             ]);
         }
 
@@ -389,6 +391,47 @@ class FormFlowController extends Controller
             ?? data_get($state, 'metadata.claim_workflow');
 
         return is_array($workflow) ? $workflow : null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $state
+     * @return array<int|string, mixed>
+     */
+    private function packageVersions(array $state): array
+    {
+        $versions = data_get($state, 'instructions.metadata.package_versions')
+            ?? data_get($state, 'metadata.package_versions')
+            ?? $this->firstStepConfigValue($state, 'package_versions', []);
+
+        return is_array($versions) ? $versions : [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $state
+     */
+    private function showPackageVersions(array $state): bool
+    {
+        return (bool) (
+            data_get($state, 'instructions.metadata.show_package_versions')
+            ?? data_get($state, 'metadata.show_package_versions')
+            ?? $this->firstStepConfigValue($state, 'show_package_versions', false)
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $state
+     */
+    private function firstStepConfigValue(array $state, string $key, mixed $default = null): mixed
+    {
+        foreach ((array) data_get($state, 'instructions.steps', []) as $step) {
+            $value = data_get($step, "config.{$key}");
+
+            if ($value !== null) {
+                return $value;
+            }
+        }
+
+        return $default;
     }
 
     private function shouldSkipConsumedSplash(array $state, FormFlowStepData $stepData): bool

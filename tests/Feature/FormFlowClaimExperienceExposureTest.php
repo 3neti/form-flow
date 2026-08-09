@@ -225,6 +225,13 @@ it('passes an optional claim workflow confirmation label to the complete page', 
             'claim_workflow' => [
                 'confirmation_label' => 'Authorize Campaign',
             ],
+            'package_versions' => [
+                [
+                    'name' => '3neti/form-flow',
+                    'version' => 'v-test',
+                ],
+            ],
+            'show_package_versions' => true,
         ],
     ]);
 
@@ -243,6 +250,9 @@ it('passes an optional claim workflow confirmation label to the complete page', 
         ->assertInertia(fn (Assert $page) => $page
             ->component('form-flow/core/Complete')
             ->where('claim_workflow.confirmation_label', 'Authorize Campaign')
+            ->where('package_versions.0.name', '3neti/form-flow')
+            ->where('package_versions.0.version', 'v-test')
+            ->where('show_package_versions', true)
         );
 });
 
