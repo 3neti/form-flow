@@ -15,6 +15,11 @@ import { CheckCircle2, Clock, AlertCircle, ReceiptText } from "lucide-vue-next";
 import { computed, ref, onUnmounted } from "vue";
 import { useFormFlowSummary } from "@/composables/useFormFlowSummary";
 import { initializeTheme } from "@/composables/useTheme";
+import {
+  destinationInstitution,
+  payoutRouteSegments,
+  payoutRouteSentence,
+} from "@/components/x-change/support/payoutDestinations";
 import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";
 import FormFlowActions from "./components/FormFlowActions.vue";
 
@@ -202,6 +207,38 @@ const flatData = computed(() =>
 );
 const heroData = computed(() => extractHeroData(flatData.value));
 const dataSections = computed(() => groupDataBySection(flatData.value));
+const selectedBankCode = computed(() =>
+  String(flatData.value.bank_code || flatData.value.bank_account || "").trim(),
+);
+const selectedAccountNumber = computed(() =>
+  String(flatData.value.account_number || "").trim(),
+);
+const selectedSettlementRail = computed(() =>
+  String(flatData.value.settlement_rail || "INSTAPAY").trim(),
+);
+const selectedDestination = computed(() =>
+  destinationInstitution(selectedBankCode.value),
+);
+const payoutRouteVisible = computed(
+  () =>
+    isRedemptionFlow.value &&
+    Boolean(selectedBankCode.value || selectedAccountNumber.value),
+);
+const payoutRouteSegmentsList = computed(() =>
+  payoutRouteSegments({
+    bankCode: selectedBankCode.value,
+    accountNumber: selectedAccountNumber.value,
+    settlementRail: selectedSettlementRail.value,
+  }),
+);
+const payoutRouteSummary = computed(() =>
+  payoutRouteSentence({
+    amount: heroData.value.amount,
+    bankCode: selectedBankCode.value,
+    accountNumber: selectedAccountNumber.value,
+    settlementRail: selectedSettlementRail.value,
+  }),
+);
 
 if (import.meta.env.DEV && props.claim_experience) {
   console.debug("[form-flow] claim experience", {
@@ -302,6 +339,50 @@ if (import.meta.env.DEV && props.claim_experience) {
                 &middot; {{ heroData.settlementRail }}</template
               >
             </p>
+          </div>
+
+          <div
+            v-if="payoutRouteVisible"
+            class="rounded-xl border border-primary/15 bg-primary/[0.035] p-3"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p
+                  class="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/70"
+                >
+                  Confirm destination
+                </p>
+                <p class="mt-1 text-sm font-semibold text-foreground">
+                  {{ payoutRouteSummary }}
+                </p>
+              </div>
+              <span
+                class="shrink-0 rounded-full border border-border/70 bg-background px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
+              >
+                {{
+                  selectedDestination.category === "wallet" ? "Wallet" : "Bank"
+                }}
+              </span>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center gap-1.5">
+              <template
+                v-for="(segment, index) in payoutRouteSegmentsList"
+                :key="`${segment}-${index}`"
+              >
+                <span
+                  class="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm"
+                >
+                  {{ segment }}
+                </span>
+                <span
+                  v-if="index < payoutRouteSegmentsList.length - 1"
+                  class="text-xs text-muted-foreground"
+                  aria-hidden="true"
+                >
+                  ->
+                </span>
+              </template>
+            </div>
           </div>
 
           <!-- Compact summary sections -->

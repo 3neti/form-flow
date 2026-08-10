@@ -37,6 +37,11 @@ import {
   claimWorkflowSummaryText,
   normalizeClaimWorkflow,
 } from "@/components/x-change/formFlowClaimWorkflow";
+import {
+  destinationInstitution,
+  payoutRouteSegments,
+  payoutRouteSentence,
+} from "@/components/x-change/support/payoutDestinations";
 import FormFlowActions from "./components/FormFlowActions.vue";
 import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";
 import { normalizeFormFlowUiVariant } from "./components/formFlowUiVariant";
@@ -189,6 +194,40 @@ const claimWorkflowReview = computed(() =>
 const submitLabel = computed(() =>
   claimWorkflowConfirmationLabel(claimWorkflow.value),
 );
+const selectedBankCode = computed(() =>
+  String(formData.value.bank_code || formData.value.bank_account || "").trim(),
+);
+const selectedAccountNumber = computed(() =>
+  String(formData.value.account_number || "").trim(),
+);
+const selectedSettlementRail = computed(() =>
+  String(formData.value.settlement_rail || "INSTAPAY").trim(),
+);
+const selectedDestination = computed(() =>
+  destinationInstitution(selectedBankCode.value),
+);
+const payoutRouteVisible = computed(
+  () =>
+    isDisburseFlow.value &&
+    Boolean(selectedBankCode.value || selectedAccountNumber.value),
+);
+const payoutRouteSegmentsList = computed(() =>
+  payoutRouteSegments({
+    bankCode: selectedBankCode.value,
+    accountNumber: selectedAccountNumber.value,
+    settlementRail: selectedSettlementRail.value,
+  }),
+);
+const payoutRouteSummary = computed(() =>
+  payoutRouteSentence({
+    amount: formData.value.amount
+      ? formatBadgeValue(props.fields.find((field) => field.name === "amount"))
+      : null,
+    bankCode: selectedBankCode.value,
+    accountNumber: selectedAccountNumber.value,
+    settlementRail: selectedSettlementRail.value,
+  }),
+);
 const uiVariant = computed(() => normalizeFormFlowUiVariant(props.ui_variant));
 const isCompactUi = computed(() => uiVariant.value === "compact");
 const isImmersiveUi = computed(() => uiVariant.value === "immersive");
@@ -268,7 +307,7 @@ const initializeFormData = () => {
     } else if (field.type === "settlement_rail") {
       formData.value[field.name] = null;
     } else if (field.type === "bank_account") {
-      formData.value[field.name] = "GXCHPHM2XXX"; // Fallback if backend didn't resolve
+      formData.value[field.name] = null;
     } else {
       formData.value[field.name] = "";
     }
@@ -1110,7 +1149,7 @@ if (import.meta.env.DEV && props.claim_experience) {
                       <SettlementRailSelect
                         v-model="formData[field.name]"
                         :amount="formData.amount || 0"
-                        :bank-code="formData.bank_account || null"
+                        :bank-code="selectedBankCode || null"
                         :disabled="field.disabled || field.readonly"
                       />
                       <p
@@ -1405,7 +1444,7 @@ if (import.meta.env.DEV && props.claim_experience) {
                 <SettlementRailSelect
                   v-model="formData[field.name]"
                   :amount="formData.amount || 0"
-                  :bank-code="formData.bank_account || null"
+                  :bank-code="selectedBankCode || null"
                   :disabled="field.disabled || field.readonly"
                 />
                 <p v-if="errors[field.name]" class="text-sm text-destructive">
@@ -1433,6 +1472,52 @@ if (import.meta.env.DEV && props.claim_experience) {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div
+            v-if="payoutRouteVisible"
+            class="rounded-xl border border-primary/15 bg-primary/[0.035] p-3"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p
+                  class="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/70"
+                >
+                  Money route
+                </p>
+                <p class="mt-1 text-sm font-semibold text-foreground">
+                  {{ payoutRouteSummary }}
+                </p>
+              </div>
+              <Badge variant="outline" class="shrink-0 text-[10px]">
+                {{
+                  selectedDestination.category === "wallet" ? "Wallet" : "Bank"
+                }}
+              </Badge>
+            </div>
+            <div class="mt-3 flex flex-wrap items-center gap-1.5">
+              <template
+                v-for="(segment, index) in payoutRouteSegmentsList"
+                :key="`${segment}-${index}`"
+              >
+                <span
+                  class="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm"
+                >
+                  {{ segment }}
+                </span>
+                <span
+                  v-if="index < payoutRouteSegmentsList.length - 1"
+                  class="text-xs text-muted-foreground"
+                  aria-hidden="true"
+                >
+                  ->
+                </span>
+              </template>
+            </div>
+            <p class="mt-2 text-[11px] text-muted-foreground">
+              Check the destination before continuing. Maya Wallet and Maya Bank
+              are different destinations.
+            </p>
           </div>
 
           <FormFlowActions
