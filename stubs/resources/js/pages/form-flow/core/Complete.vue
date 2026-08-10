@@ -411,14 +411,14 @@ if (import.meta.env.DEV && props.claim_experience) {
             <div
               v-for="field in redemptionSummaryFields"
               :key="field.key"
-              class="flex items-baseline justify-between gap-4 py-2 first:pt-0 last:pb-0"
+              class="grid grid-cols-2 items-start gap-x-4 gap-y-1 py-2 first:pt-0 last:pb-0"
             >
-              <dt class="text-muted-foreground">{{ field.label }}</dt>
+              <dt class="min-w-0 text-muted-foreground">{{ field.label }}</dt>
               <dd
-                class="flex items-center justify-end gap-1.5 font-medium text-foreground"
+                class="flex min-w-0 flex-wrap items-center justify-end gap-1.5 font-medium text-foreground"
                 :class="{ 'tabular-nums': field.tabular }"
               >
-                <span>{{ field.value }}</span>
+                <span class="min-w-0 text-right break-words">{{ field.value }}</span>
                 <PayoutDestinationIcon
                   v-if="field.icon"
                   :icon-asset="field.icon.iconAsset"
@@ -457,18 +457,7 @@ if (import.meta.env.DEV && props.claim_experience) {
             </div>
           </div>
 
-          <FormFlowActions
-            action-placement="viewport_bottom"
-            :primary-disabled="isProcessing"
-            :processing="isProcessing"
-            :show-secondary="false"
-            :primary-label="confirmationLabel"
-            primary-type="button"
-            variant="immersive"
-            @primary="handleClose"
-          />
-
-          <!-- Reference ID: subtle footer -->
+          <!-- Reference ID: subtle footer, stays with the card's content -->
           <p
             class="text-center text-[10px] text-gray-300 dark:text-gray-700 font-mono"
           >
@@ -476,6 +465,27 @@ if (import.meta.env.DEV && props.claim_experience) {
           </p>
         </CardContent>
       </Card>
+
+      <!--
+        Rendered outside Card/CardContent on purpose: in "viewport_bottom"
+        mode FormFlowActions renders its own invisible height spacer (to
+        reserve room below the visually fixed button bar) as a sibling of
+        the buttons. Keeping that spacer inside CardContent's flex column
+        showed up as dead space inside the card body; the primary action
+        itself is unaffected since `fixed` positioning is relative to the
+        viewport, not to Card.
+      -->
+      <FormFlowActions
+        action-placement="viewport_bottom"
+        :primary-disabled="isProcessing"
+        :processing="isProcessing"
+        :show-secondary="false"
+        :primary-label="confirmationLabel"
+        primary-type="button"
+        variant="immersive"
+        @primary="handleClose"
+      />
+
       <FormFlowVersionStrip
         :show="props.show_package_versions"
         :package-versions="props.package_versions"

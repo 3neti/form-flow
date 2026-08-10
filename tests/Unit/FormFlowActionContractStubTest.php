@@ -116,7 +116,7 @@ it('tightens the redemption confirmation screen into a semantic payout summary',
 
     // 4. Institution and rail icons render after their authoritative text
     // values (value span appears before the icon component in source).
-    $valueSpanPos = strpos($stub, '<span>{{ field.value }}</span>');
+    $valueSpanPos = strpos($stub, '{{ field.value }}</span>');
     $iconPos = strpos($stub, '<PayoutDestinationIcon');
 
     expect($valueSpanPos)->not->toBeFalse()
@@ -125,7 +125,7 @@ it('tightens the redemption confirmation screen into a semantic payout summary',
 
     // 5. Icon failure cannot remove the textual value: the value span is
     // unconditional (not gated behind the same v-if as the icon).
-    expect($stub)->toContain('<span>{{ field.value }}</span>');
+    expect($stub)->toContain('{{ field.value }}</span>');
 
     // Decorative icons must not duplicate screen-reader announcements.
     expect($stub)
@@ -173,6 +173,46 @@ it('tightens the redemption confirmation screen into a semantic payout summary',
         ->toContain(':primary-label="confirmationLabel"')
         ->toContain('@primary="handleClose"')
         ->toContain('<FormFlowVersionStrip');
+
+    // 9. The fixed action component (and its invisible viewport spacer)
+    // renders outside the compact Card/CardContent, so the spacer never
+    // eats visible space inside the card body. The reference ID, however,
+    // stays inside the card's content, immediately after the summary and
+    // any supplemental evidence.
+    $cardContentClosePos = strpos($stub, '</CardContent>');
+    $cardClosePos = strpos($stub, '</Card>');
+    $formFlowActionsPos = strpos($stub, '<FormFlowActions');
+    $referenceIdPos = strpos($stub, '{{ state.reference_id }}');
+    $summaryPos = strpos($stub, 'data-testid="redemption-summary"');
+    $supplementalPos = strpos($stub, 'v-for="section in supplementalSections"');
+
+    expect($cardContentClosePos)->not->toBeFalse()
+        ->and($cardClosePos)->not->toBeFalse()
+        ->and($formFlowActionsPos)->not->toBeFalse()
+        ->and($referenceIdPos)->not->toBeFalse();
+
+    // FormFlowActions is a sibling of Card, not a child of CardContent.
+    expect($cardContentClosePos)->toBeLessThan($cardClosePos)
+        ->and($cardClosePos)->toBeLessThan($formFlowActionsPos);
+
+    // The reference ID stays inside CardContent, after the summary and
+    // supplemental sections.
+    expect($summaryPos)->toBeLessThan($supplementalPos)
+        ->and($supplementalPos)->toBeLessThan($referenceIdPos)
+        ->and($referenceIdPos)->toBeLessThan($cardContentClosePos);
+
+    // 10. Every summary row uses a bounded two-column grid (neither column
+    // can force the other outside the card) with safe long-value wrapping.
+    $summaryBlockStart = strpos($stub, '<dl');
+    $summaryBlockEnd = strpos($stub, '</dl>', $summaryBlockStart);
+    $summaryBlock = substr($stub, $summaryBlockStart, $summaryBlockEnd - $summaryBlockStart);
+
+    expect($summaryBlock)
+        ->toContain('grid grid-cols-2')
+        ->toContain('min-w-0')
+        ->toContain('break-words')
+        ->toContain('justify-end')
+        ->not->toContain('truncate');
 });
 
 it('renders package versions as a compact QA chip strip', function (): void {
