@@ -11,15 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, Clock, AlertCircle, ReceiptText } from "lucide-vue-next";
+import { AlertCircle, CheckCircle2, Clock, Landmark, Route, WalletCards } from "lucide-vue-next";
+import type { Component } from "vue";
 import { computed, ref, onUnmounted } from "vue";
 import { useFormFlowSummary } from "@/composables/useFormFlowSummary";
 import { initializeTheme } from "@/composables/useTheme";
 import {
   destinationInstitution,
-  payoutRouteIcons,
-  payoutRouteSegments,
-  payoutRouteSentence,
+  iconAssetForRail,
 } from "@/components/x-change/support/payoutDestinations";
 import PayoutDestinationIcon from "@/components/x-change/PayoutDestinationIcon.vue";
 import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";
@@ -201,53 +200,118 @@ onUnmounted(() => {
 });
 
 // Data summary transformation
-const { flattenCollectedData, extractHeroData, groupDataBySection } =
+const { flattenCollectedData, formatFieldValue, groupDataBySection } =
   useFormFlowSummary();
 
 const flatData = computed(() =>
   flattenCollectedData(props.state.collected_data),
 );
-const heroData = computed(() => extractHeroData(flatData.value));
 const dataSections = computed(() => groupDataBySection(flatData.value));
-const selectedBankCode = computed(() =>
-  String(flatData.value.bank_code || flatData.value.bank_account || "").trim(),
+
+// The redemption confirmation summary replaces the "Redemption Details"
+// section from useFormFlowSummary with a fixed-order, icon-annotated view;
+// the remaining supplemental sections (Personal Information, Location
+// Verification, Identity Verification) still come straight from it.
+const supplementalSections = computed(() =>
+  dataSections.value.filter((section) => section.title !== "Redemption Details"),
 );
-const selectedAccountNumber = computed(() =>
-  String(flatData.value.account_number || "").trim(),
-);
-const selectedSettlementRail = computed(() =>
-  String(flatData.value.settlement_rail || "INSTAPAY").trim(),
-);
-const selectedDestination = computed(() =>
-  destinationInstitution(selectedBankCode.value),
-);
-const payoutRouteVisible = computed(
-  () =>
-    isRedemptionFlow.value &&
-    Boolean(selectedBankCode.value || selectedAccountNumber.value),
-);
-const payoutRouteSegmentsList = computed(() =>
-  payoutRouteSegments({
-    bankCode: selectedBankCode.value,
-    accountNumber: selectedAccountNumber.value,
-    settlementRail: selectedSettlementRail.value,
-  }),
-);
-const payoutRouteIconsList = computed(() =>
-  payoutRouteIcons({
-    bankCode: selectedBankCode.value,
-    accountNumber: selectedAccountNumber.value,
-    settlementRail: selectedSettlementRail.value,
-  }),
-);
-const payoutRouteSummary = computed(() =>
-  payoutRouteSentence({
-    amount: heroData.value.amount,
-    bankCode: selectedBankCode.value,
-    accountNumber: selectedAccountNumber.value,
-    settlementRail: selectedSettlementRail.value,
-  }),
-);
+
+interface RedemptionSummaryFieldIcon {
+  iconAsset: string | null;
+  fallbackIcon: Component;
+}
+
+interface RedemptionSummaryField {
+  key: string;
+  label: string;
+  value: string;
+  tabular?: boolean;
+  icon?: RedemptionSummaryFieldIcon;
+}
+
+function hasCollectedValue(
+  data: Record<string, any>,
+  key: string,
+): boolean {
+  return (
+    key in data &&
+    data[key] !== null &&
+    data[key] !== undefined &&
+    String(data[key]).trim() !== ""
+  );
+}
+
+// Fixed canonical order: Mobile Number, Bank/Wallet Provider, Account
+// Number, Amount, Payment Method. Only fields actually present in the
+// collected data are rendered -- specialized workflows (e.g. officer
+// authorization) that never collect a payout destination simply produce
+// an empty list here, never placeholder rows.
+const redemptionSummaryFields = computed<RedemptionSummaryField[]>(() => {
+  const data = flatData.value;
+  const fields: RedemptionSummaryField[] = [];
+
+  if (hasCollectedValue(data, "mobile")) {
+    fields.push({
+      key: "mobile",
+      label: "Mobile Number",
+      value: formatFieldValue("mobile", data.mobile),
+      tabular: true,
+    });
+  }
+
+  const bankCodeKey = hasCollectedValue(data, "bank_code")
+    ? "bank_code"
+    : hasCollectedValue(data, "bank_account")
+      ? "bank_account"
+      : null;
+
+  if (bankCodeKey) {
+    const institution = destinationInstitution(data[bankCodeKey]);
+
+    fields.push({
+      key: "bank_code",
+      label: "Bank/Wallet Provider",
+      value: institution.shortLabel,
+      icon: {
+        iconAsset: institution.iconAsset,
+        fallbackIcon: institution.category === "wallet" ? WalletCards : Landmark,
+      },
+    });
+  }
+
+  if (hasCollectedValue(data, "account_number")) {
+    fields.push({
+      key: "account_number",
+      label: "Account Number",
+      // Shown in full -- never truncated -- so the claimant can verify it.
+      value: String(data.account_number).trim(),
+      tabular: true,
+    });
+  }
+
+  if (hasCollectedValue(data, "amount")) {
+    fields.push({
+      key: "amount",
+      label: "Amount",
+      value: formatFieldValue("amount", data.amount),
+      tabular: true,
+    });
+  }
+
+  if (hasCollectedValue(data, "settlement_rail")) {
+    fields.push({
+      key: "settlement_rail",
+      label: "Payment Method",
+      value: formatFieldValue("settlement_rail", data.settlement_rail),
+      icon: {
+        iconAsset: iconAssetForRail(data.settlement_rail),
+        fallbackIcon: Route,
+      },
+    });
+  }
+
+  return fields;
+});
 
 if (import.meta.env.DEV && props.claim_experience) {
   console.debug("[form-flow] claim experience", {
@@ -324,84 +388,52 @@ if (import.meta.env.DEV && props.claim_experience) {
       class="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-5 py-8"
     >
       <Card class="mx-auto max-w-md border-0 bg-card/80 shadow-sm">
-        <CardContent class="space-y-8 px-6 py-8">
-          <!-- Hero: amount + voucher code -->
-          <div class="text-center pt-4 space-y-3">
-            <ReceiptText class="h-8 w-8 text-primary mx-auto" />
-            <p
-              v-if="heroData.amount"
-              class="text-4xl font-bold tracking-tight text-foreground"
-            >
-              {{ heroData.amount }}
-            </p>
-            <div
+        <CardContent class="flex flex-col gap-6 px-6 py-8">
+          <!-- Compact confirmation header: workflow-provided label + Pay Code -->
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-base font-semibold text-foreground">
+              {{ confirmationLabel }}
+            </h2>
+            <span
               v-if="voucherCode"
-              class="inline-flex items-center gap-1.5 px-4 py-1 text-sm font-mono font-semibold tracking-widest text-primary bg-primary/5 border border-primary/20 rounded-full"
+              class="shrink-0 rounded-full border border-primary/20 bg-primary/5 px-3 py-0.5 font-mono text-xs font-semibold tracking-wide text-primary tabular-nums"
             >
-              <span class="text-primary/40" aria-hidden="true">||</span>
               {{ voucherCode }}
-              <span class="text-primary/40" aria-hidden="true">||</span>
-            </div>
-            <p v-if="heroData.bankName" class="text-sm text-muted-foreground">
-              {{ heroData.bankName
-              }}<template v-if="heroData.settlementRail">
-                &middot; {{ heroData.settlementRail }}</template
-              >
-            </p>
+            </span>
           </div>
 
-          <div
-            v-if="payoutRouteVisible"
-            class="rounded-xl border border-primary/15 bg-primary/[0.035] p-3"
+          <!-- Redemption summary: fixed-order payout facts for final review -->
+          <dl
+            v-if="redemptionSummaryFields.length > 0"
+            data-testid="redemption-summary"
+            class="divide-y divide-border/60 text-sm"
           >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <p
-                  class="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/70"
-                >
-                  Confirm destination
-                </p>
-                <p class="mt-1 text-sm font-semibold text-foreground">
-                  {{ payoutRouteSummary }}
-                </p>
-              </div>
-              <span
-                class="shrink-0 rounded-full border border-border/70 bg-background px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
+            <div
+              v-for="field in redemptionSummaryFields"
+              :key="field.key"
+              class="flex items-baseline justify-between gap-4 py-2 first:pt-0 last:pb-0"
+            >
+              <dt class="text-muted-foreground">{{ field.label }}</dt>
+              <dd
+                class="flex items-center justify-end gap-1.5 font-medium text-foreground"
+                :class="{ 'tabular-nums': field.tabular }"
               >
-                {{
-                  selectedDestination.category === "wallet" ? "Wallet" : "Bank"
-                }}
-              </span>
-            </div>
-            <div class="mt-3 flex flex-wrap items-center gap-1.5">
-              <template
-                v-for="(segment, index) in payoutRouteSegmentsList"
-                :key="`${segment}-${index}`"
-              >
-                <span
-                  class="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm"
-                >
-                  <PayoutDestinationIcon
-                    :icon-asset="payoutRouteIconsList[index]"
-                    :alt="segment"
-                    size-class="h-3 w-3"
-                  />
-                  {{ segment }}
-                </span>
-                <span
-                  v-if="index < payoutRouteSegmentsList.length - 1"
-                  class="text-xs text-muted-foreground"
+                <span>{{ field.value }}</span>
+                <PayoutDestinationIcon
+                  v-if="field.icon"
+                  :icon-asset="field.icon.iconAsset"
+                  :fallback-icon="field.icon.fallbackIcon"
+                  alt=""
                   aria-hidden="true"
-                >
-                  ->
-                </span>
-              </template>
+                  size-class="h-3.5 w-3.5"
+                />
+              </dd>
             </div>
-          </div>
+          </dl>
 
-          <!-- Compact summary sections -->
-          <div class="space-y-5">
-            <div v-for="section in dataSections" :key="section.title">
+          <!-- Supplemental sections (Personal Information, Location Verification, Identity Verification) -->
+          <div v-if="supplementalSections.length > 0" class="flex flex-col gap-5">
+            <div v-for="section in supplementalSections" :key="section.title">
               <p
                 class="text-[11px] uppercase tracking-[0.15em] text-muted-foreground mb-2"
               >
