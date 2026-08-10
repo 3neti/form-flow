@@ -17,9 +17,11 @@ import { useFormFlowSummary } from "@/composables/useFormFlowSummary";
 import { initializeTheme } from "@/composables/useTheme";
 import {
   destinationInstitution,
+  payoutRouteIcons,
   payoutRouteSegments,
   payoutRouteSentence,
 } from "@/components/x-change/support/payoutDestinations";
+import PayoutDestinationIcon from "@/components/x-change/PayoutDestinationIcon.vue";
 import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";
 import FormFlowActions from "./components/FormFlowActions.vue";
 
@@ -231,6 +233,13 @@ const payoutRouteSegmentsList = computed(() =>
     settlementRail: selectedSettlementRail.value,
   }),
 );
+const payoutRouteIconsList = computed(() =>
+  payoutRouteIcons({
+    bankCode: selectedBankCode.value,
+    accountNumber: selectedAccountNumber.value,
+    settlementRail: selectedSettlementRail.value,
+  }),
+);
 const payoutRouteSummary = computed(() =>
   payoutRouteSentence({
     amount: heroData.value.amount,
@@ -370,8 +379,13 @@ if (import.meta.env.DEV && props.claim_experience) {
                 :key="`${segment}-${index}`"
               >
                 <span
-                  class="rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm"
+                  class="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm"
                 >
+                  <PayoutDestinationIcon
+                    :icon-asset="payoutRouteIconsList[index]"
+                    :alt="segment"
+                    size-class="h-3 w-3"
+                  />
                   {{ segment }}
                 </span>
                 <span
