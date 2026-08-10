@@ -83,11 +83,16 @@ class DriverService
 
         $allowedMobile = $instructions->cash->validation->mobile ?? null;
         $hasAllowedMobile = filled($allowedMobile);
+        $settlementRail = $instructions->cash->settlement_rail ?? null;
+        $settlementRail = is_object($settlementRail) && isset($settlementRail->value)
+            ? $settlementRail->value
+            : (is_string($settlementRail) ? $settlementRail : '');
 
         return [
             'code' => $voucher->code,
             'amount' => (float) ($instructions->cash->amount ?? 0),
             'currency' => $instructions->cash->currency ?? 'PHP',
+            'settlement_rail' => $settlementRail,
             'allowed_mobile' => $allowedMobile,
             'has_allowed_mobile' => $hasAllowedMobile ? 'true' : 'false',
             'should_persist_mobile' => $hasAllowedMobile ? 'false' : 'true',
@@ -130,6 +135,7 @@ class DriverService
                     'cash' => [
                         'amount' => $instructions->cash->amount ?? 0,
                         'currency' => $instructions->cash->currency ?? 'PHP',
+                        'settlement_rail' => $settlementRail,
                     ],
                 ],
             ],
