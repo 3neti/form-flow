@@ -43,6 +43,13 @@ import {
   payoutRouteSegments,
   payoutRouteSentence,
 } from "@/components/x-change/support/payoutDestinations";
+import {
+  isPayoutRoutePreviewVisible,
+  resolvePayoutAccountNumber,
+  resolvePayoutBankCode,
+  resolvePayoutSettlementRail,
+  resolvePayoutSettlementRailOrDefault,
+} from "@/components/x-change/support/formFlowPayoutRoutePreview";
 import PayoutDestinationIcon from "@/components/x-change/PayoutDestinationIcon.vue";
 import FormFlowActions from "./components/FormFlowActions.vue";
 import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";
@@ -196,22 +203,39 @@ const claimWorkflowReview = computed(() =>
 const submitLabel = computed(() =>
   claimWorkflowConfirmationLabel(claimWorkflow.value),
 );
+// Form Flow field *names* are workflow-provided and may vary; the active
+// bank/wallet and settlement rail fields are resolved by their `type`
+// instead of assuming canonical names like `bank_code`/`settlement_rail`.
 const selectedBankCode = computed(() =>
-  String(formData.value.bank_code || formData.value.bank_account || "").trim(),
+  resolvePayoutBankCode(props.fields, formData.value),
 );
 const selectedAccountNumber = computed(() =>
-  String(formData.value.account_number || "").trim(),
+  resolvePayoutAccountNumber(formData.value),
 );
+// Raw (undefaulted) settlement rail, used to cross-link the bank/rail
+// selects -- forcing a default here would misrepresent "not yet chosen".
+const activeSettlementRail = computed(() =>
+  resolvePayoutSettlementRail(props.fields, formData.value),
+);
+// Defaulted settlement rail, used for display copy in the route preview.
 const selectedSettlementRail = computed(() =>
-  String(formData.value.settlement_rail || "INSTAPAY").trim(),
+  resolvePayoutSettlementRailOrDefault(props.fields, formData.value),
 );
 const selectedDestination = computed(() =>
   destinationInstitution(selectedBankCode.value),
 );
-const payoutRouteVisible = computed(
-  () =>
-    isDisburseFlow.value &&
-    Boolean(selectedBankCode.value || selectedAccountNumber.value),
+// Only ever shown for workflows that explicitly collect a payout
+// destination (via claim workflow metadata or a bank_account-typed field
+// plus the legacy disburse-flow heuristic), and only once both the
+// bank/wallet and account number are resolved -- see
+// isPayoutRoutePreviewVisible for the full safety rationale.
+const payoutRouteVisible = computed(() =>
+  isPayoutRoutePreviewVisible({
+    fields: props.fields,
+    formData: formData.value,
+    claimWorkflow: claimWorkflow.value,
+    isDisburseFlow: isDisburseFlow.value,
+  }),
 );
 const payoutRouteSegmentsList = computed(() =>
   payoutRouteSegments({
@@ -1126,7 +1150,7 @@ if (import.meta.env.DEV && props.claim_experience) {
                       </Label>
                       <BankEMISelect
                         v-model="formData[field.name]"
-                        :settlement-rail="formData.settlement_rail || null"
+                        :settlement-rail="activeSettlementRail"
                         :institutions="field.institution_options ?? []"
                         :disabled="field.disabled || field.readonly"
                       />
@@ -1472,7 +1496,7 @@ if (import.meta.env.DEV && props.claim_experience) {
                 </Label>
                 <BankEMISelect
                   v-model="formData[field.name]"
-                  :settlement-rail="formData.settlement_rail || null"
+                  :settlement-rail="activeSettlementRail"
                   :institutions="field.institution_options ?? []"
                   :disabled="field.disabled || field.readonly"
                 />
@@ -1510,14 +1534,14 @@ if (import.meta.env.DEV && props.claim_experience) {
                 :key="`${segment}-${index}`"
               >
                 <span
-                  class="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm"
+                  class="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm"
                 >
                   <PayoutDestinationIcon
                     :icon-asset="payoutRouteIconsList[index]"
                     :alt="segment"
                     size-class="h-3 w-3"
                   />
-                  {{ segment }}
+                  <span class="break-words">{{ segment }}</span>
                 </span>
                 <span
                   v-if="index < payoutRouteSegmentsList.length - 1"
