@@ -84,26 +84,30 @@ let intervalId: ReturnType<typeof setInterval> | null = null;
 // Detect disburse flow from voucher_code presence
 const isDisburseFlow = computed(() => !!props.voucher_code);
 
-const voucherCodeSizeClass = computed(() => {
+const voucherCodeDisplayStyle = computed(() => {
   const length = String(props.voucher_code ?? "").length;
+  let fontSize = "4.5rem";
 
-  if (length <= 4) {
-    return "text-6xl sm:text-7xl";
+  if (length > 4 && length <= 8) {
+    fontSize = "3.75rem";
   }
 
-  if (length <= 8) {
-    return "text-5xl sm:text-6xl";
+  if (length > 8 && length <= 14) {
+    fontSize = "3rem";
   }
 
-  if (length <= 14) {
-    return "text-4xl sm:text-5xl";
+  if (length > 14 && length <= 22) {
+    fontSize = "2.25rem";
   }
 
-  if (length <= 22) {
-    return "text-3xl sm:text-4xl";
+  if (length > 22) {
+    fontSize = "1.875rem";
   }
 
-  return "text-2xl sm:text-3xl";
+  return {
+    fontSize,
+    letterSpacing: "0.08em",
+  };
 });
 
 // Detect content type and render appropriately
@@ -271,10 +275,8 @@ if (import.meta.env.DEV && props.claim_experience) {
           >
             <span class="h-0.5 min-w-5 flex-1 rounded-full bg-primary/75" />
             <span
-              :class="[
-                voucherCodeSizeClass,
-                'min-w-0 max-w-full break-all font-mono font-black uppercase leading-none tracking-[0.08em] text-primary',
-              ]"
+              :style="voucherCodeDisplayStyle"
+              class="min-w-0 max-w-full break-all font-mono font-black uppercase leading-none text-primary"
             >
               {{ voucher_code }}
             </span>
