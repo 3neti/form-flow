@@ -24,11 +24,13 @@ it('renders the default splash Pay Code as a full-width dynamic display', functi
 
     expect($stub)
         ->toContain('const voucherCodeDisplayStyle = computed')
-        ->toContain('fontSize = "3.75rem"')
+        ->toContain('fontSize = "5.25rem"')
+        ->toContain('fontSize = "4.5rem"')
         ->toContain('letterSpacing: "0.08em"')
         ->toContain('data-testid="form-flow-splash-pay-code"')
-        ->toContain('class="flex w-full items-center gap-3 sm:gap-4"')
-        ->toContain('h-0.5 min-w-5 flex-1 rounded-full bg-primary/75')
+        ->toContain('class="flex w-full items-center gap-3 sm:gap-5"')
+        ->toContain('class="flex min-w-6 flex-1 flex-col gap-1.5"')
+        ->toContain('h-px w-full rounded-full bg-primary/80')
         ->toContain('class="min-w-0 max-w-full break-all font-mono font-black uppercase leading-none text-primary"')
         ->not->toContain('aria-hidden="true">||</span>');
 });

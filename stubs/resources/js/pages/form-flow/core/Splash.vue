@@ -86,18 +86,18 @@ const isDisburseFlow = computed(() => !!props.voucher_code);
 
 const voucherCodeDisplayStyle = computed(() => {
   const length = String(props.voucher_code ?? "").length;
-  let fontSize = "4.5rem";
+  let fontSize = "5.25rem";
 
   if (length > 4 && length <= 8) {
-    fontSize = "3.75rem";
+    fontSize = "4.5rem";
   }
 
   if (length > 8 && length <= 14) {
-    fontSize = "3rem";
+    fontSize = "3.5rem";
   }
 
   if (length > 14 && length <= 22) {
-    fontSize = "2.25rem";
+    fontSize = "2.5rem";
   }
 
   if (length > 22) {
@@ -240,9 +240,9 @@ if (import.meta.env.DEV && props.claim_experience) {
     v-if="is_default_splash"
     class="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-5 py-8 select-none"
   >
-    <Card class="mx-auto w-full max-w-3xl border-0 bg-card/90 shadow-sm">
+    <Card class="mx-auto w-full max-w-4xl border-0 bg-card/90 shadow-sm">
       <CardContent
-        class="flex min-h-[620px] flex-col items-center justify-center px-5 py-8 text-center sm:min-h-[680px] sm:px-10"
+        class="flex min-h-[620px] flex-col items-center justify-center px-4 py-8 text-center sm:min-h-[680px] sm:px-12"
       >
         <!-- Hero logo -->
         <img
@@ -271,16 +271,22 @@ if (import.meta.env.DEV && props.claim_experience) {
 
           <div
             data-testid="form-flow-splash-pay-code"
-            class="flex w-full items-center gap-3 sm:gap-4"
+            class="flex w-full items-center gap-3 sm:gap-5"
           >
-            <span class="h-0.5 min-w-5 flex-1 rounded-full bg-primary/75" />
+            <span class="flex min-w-6 flex-1 flex-col gap-1.5">
+              <span class="h-px w-full rounded-full bg-primary/80" />
+              <span class="h-px w-full rounded-full bg-primary/80" />
+            </span>
             <span
               :style="voucherCodeDisplayStyle"
               class="min-w-0 max-w-full break-all font-mono font-black uppercase leading-none text-primary"
             >
               {{ voucher_code }}
             </span>
-            <span class="h-0.5 min-w-5 flex-1 rounded-full bg-primary/75" />
+            <span class="flex min-w-6 flex-1 flex-col gap-1.5">
+              <span class="h-px w-full rounded-full bg-primary/80" />
+              <span class="h-px w-full rounded-full bg-primary/80" />
+            </span>
           </div>
         </div>
 
