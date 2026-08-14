@@ -273,9 +273,9 @@ if (import.meta.env.DEV && props.claim_experience) {
             data-testid="form-flow-splash-pay-code"
             class="flex w-full items-center gap-3 sm:gap-5"
           >
-            <span class="flex min-w-6 flex-1 flex-col gap-1.5">
-              <span class="h-px w-full rounded-full bg-primary/80" />
-              <span class="h-px w-full rounded-full bg-primary/80" />
+            <span class="flex min-w-6 flex-1 flex-col gap-2">
+              <span class="h-0.5 w-full rounded-full bg-foreground/75" />
+              <span class="h-0.5 w-full rounded-full bg-foreground/75" />
             </span>
             <span
               :style="voucherCodeDisplayStyle"
@@ -283,9 +283,9 @@ if (import.meta.env.DEV && props.claim_experience) {
             >
               {{ voucher_code }}
             </span>
-            <span class="flex min-w-6 flex-1 flex-col gap-1.5">
-              <span class="h-px w-full rounded-full bg-primary/80" />
-              <span class="h-px w-full rounded-full bg-primary/80" />
+            <span class="flex min-w-6 flex-1 flex-col gap-2">
+              <span class="h-0.5 w-full rounded-full bg-foreground/75" />
+              <span class="h-0.5 w-full rounded-full bg-foreground/75" />
             </span>
           </div>
         </div>

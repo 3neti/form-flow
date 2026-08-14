@@ -29,8 +29,8 @@ it('renders the default splash Pay Code as a full-width dynamic display', functi
         ->toContain('letterSpacing: "0.08em"')
         ->toContain('data-testid="form-flow-splash-pay-code"')
         ->toContain('class="flex w-full items-center gap-3 sm:gap-5"')
-        ->toContain('class="flex min-w-6 flex-1 flex-col gap-1.5"')
-        ->toContain('h-px w-full rounded-full bg-primary/80')
+        ->toContain('class="flex min-w-6 flex-1 flex-col gap-2"')
+        ->toContain('h-0.5 w-full rounded-full bg-foreground/75')
         ->toContain('class="min-w-0 max-w-full break-all font-mono font-black uppercase leading-none text-primary"')
         ->not->toContain('aria-hidden="true">||</span>');
 });
