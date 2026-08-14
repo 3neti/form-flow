@@ -224,6 +224,55 @@ const selectedSettlementRail = computed(() =>
 const selectedDestination = computed(() =>
   destinationInstitution(selectedBankCode.value),
 );
+const selectedInstitutionOption = computed(() => {
+  const normalizedCode = selectedBankCode.value.toUpperCase();
+
+  if (!normalizedCode) {
+    return null;
+  }
+
+  for (const field of props.fields) {
+    const match = field.institution_options?.find(
+      (option) => option.value.toUpperCase() === normalizedCode,
+    );
+
+    if (match) {
+      return match;
+    }
+  }
+
+  return null;
+});
+const selectedDestinationUsesMobileAccount = computed(
+  () =>
+    selectedInstitutionOption.value?.identifier_scheme === "ph_mobile" ||
+    selectedDestination.value.category === "wallet",
+);
+const mobileFieldName = computed(
+  () =>
+    props.fields.find((field) => field.name === "mobile")?.name ??
+    props.fields.find((field) => field.type === "tel")?.name ??
+    null,
+);
+const claimMobileForAccount = computed(() => {
+  if (!mobileFieldName.value) {
+    return "";
+  }
+
+  return normalizeMobileForAccount(formData.value[mobileFieldName.value]);
+});
+const canUseClaimMobileForAccount = computed(
+  () =>
+    selectedDestinationUsesMobileAccount.value &&
+    claimMobileForAccount.value !== "" &&
+    selectedAccountNumber.value !== claimMobileForAccount.value,
+);
+const accountUsesClaimMobile = computed(
+  () =>
+    selectedDestinationUsesMobileAccount.value &&
+    claimMobileForAccount.value !== "" &&
+    selectedAccountNumber.value === claimMobileForAccount.value,
+);
 // Only ever shown for workflows that explicitly collect a payout
 // destination (via claim workflow metadata or a bank_account-typed field
 // plus the legacy disburse-flow heuristic), and only once both the
@@ -262,7 +311,7 @@ const payoutRouteSummary = computed(() =>
   }),
 );
 const accountNumberInputClass =
-  "h-16 rounded-xl border-slate-200 bg-white px-4 text-2xl font-semibold tabular-nums tracking-wide text-slate-950 shadow-sm placeholder:text-base placeholder:font-medium placeholder:tracking-normal focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-white";
+  "h-16 rounded-xl border-slate-200 bg-white px-4 text-2xl font-semibold tabular-nums tracking-wide text-slate-950 shadow-sm placeholder:text-sm placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-white";
 const compactPayoutLabelClass =
   "text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500";
 const uiVariant = computed(() => normalizeFormFlowUiVariant(props.ui_variant));
@@ -665,6 +714,67 @@ function formatBadgeValue(field?: FieldDefinition): string {
   return String(value);
 }
 
+function normalizeMobileForAccount(value: unknown): string {
+  const raw = String(value ?? "").trim().replace(/\s+/g, "");
+
+  if (raw.startsWith("+63")) {
+    return `0${raw.slice(3)}`;
+  }
+
+  if (raw.startsWith("63") && raw.length === 12) {
+    return `0${raw.slice(2)}`;
+  }
+
+  return raw;
+}
+
+function fieldHasValue(field: FieldDefinition): boolean {
+  const value = formData.value[field.name];
+
+  return value !== null && value !== undefined && String(value).trim() !== "";
+}
+
+function isPayoutAttentionField(field: FieldDefinition): boolean {
+  return (
+    field.name === "mobile" ||
+    field.name === "account_number" ||
+    field.type === "bank_account" ||
+    field.type === "settlement_rail"
+  );
+}
+
+function fieldStateClass(field: FieldDefinition): string {
+  if (errors.value[field.name]) {
+    return "border-destructive bg-destructive/5";
+  }
+
+  if (field.required && isPayoutAttentionField(field) && !fieldHasValue(field)) {
+    return "border-amber-300 bg-amber-50/40 ring-1 ring-amber-200/70";
+  }
+
+  return "";
+}
+
+function fieldShellClass(field: FieldDefinition): string {
+  const state = fieldStateClass(field);
+
+  return state ? `rounded-xl ${state}` : "";
+}
+
+function copyClaimMobileToAccount(): void {
+  if (!claimMobileForAccount.value) {
+    return;
+  }
+
+  formData.value.account_number = claimMobileForAccount.value;
+  manualOverrides.value.account_number = true;
+}
+
+function clearAccountNumber(): void {
+  formData.value.account_number = "";
+  manualOverrides.value.account_number = false;
+}
+
 // Form submission
 async function handleSubmit() {
   if (props.preview_mode) return;
@@ -726,6 +836,12 @@ function getFieldLabel(field: FieldDefinition): string {
 
 // Get field placeholder
 function getFieldPlaceholder(field: FieldDefinition): string {
+  if (field.name === "account_number") {
+    return selectedDestinationUsesMobileAccount.value
+      ? "09xxxxxxxxx"
+      : "Account number";
+  }
+
   return field.placeholder || `Enter ${getFieldLabel(field).toLowerCase()}`;
 }
 
@@ -1084,8 +1200,52 @@ if (import.meta.env.DEV && props.claim_experience) {
                           field.name === 'account_number'
                             ? accountNumberInputClass
                             : '',
+                          fieldStateClass(field),
                         ]"
                       />
+                      <div
+                        v-if="field.name === 'account_number'"
+                        class="flex flex-wrap items-center gap-2"
+                      >
+                        <button
+                          v-if="canUseClaimMobileForAccount"
+                          type="button"
+                          class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800 transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                          @click="copyClaimMobileToAccount"
+                        >
+                          Use claim mobile
+                        </button>
+                        <span
+                          v-else-if="accountUsesClaimMobile"
+                          class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
+                        >
+                          Using claim mobile
+                        </span>
+                        <button
+                          v-if="selectedAccountNumber"
+                          type="button"
+                          class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                          @click="clearAccountNumber"
+                        >
+                          Clear
+                        </button>
+                        <details
+                          v-if="field.help_text"
+                          class="relative text-xs text-slate-500"
+                        >
+                          <summary
+                            class="flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-full border border-slate-200 bg-white font-semibold text-slate-500"
+                            aria-label="Account number help"
+                          >
+                            ?
+                          </summary>
+                          <p
+                            class="absolute left-0 z-10 mt-2 w-60 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-snug text-slate-600 shadow-lg"
+                          >
+                            {{ field.help_text }}
+                          </p>
+                        </details>
+                      </div>
                       <p
                         v-if="field.help_text && field.name !== 'account_number'"
                         class="text-xs text-muted-foreground"
@@ -1111,14 +1271,16 @@ if (import.meta.env.DEV && props.claim_experience) {
                           >*</span
                         >
                       </Label>
-                      <PhoneInput
-                        v-model="formData[field.name]"
-                        :error="errors[field.name]"
-                        :placeholder="field.placeholder || ''"
-                        :required="field.required"
-                        :readonly="field.readonly"
-                        :disabled="field.disabled"
-                      />
+                      <div :class="fieldShellClass(field)">
+                        <PhoneInput
+                          v-model="formData[field.name]"
+                          :error="errors[field.name]"
+                          :placeholder="field.placeholder || ''"
+                          :required="field.required"
+                          :readonly="field.readonly"
+                          :disabled="field.disabled"
+                        />
+                      </div>
                       <!-- Transaction badges below mobile field (hide amount badge for open-mode) -->
                       <div
                         v-if="field.name === 'mobile' && issuerName"
@@ -1166,15 +1328,17 @@ if (import.meta.env.DEV && props.claim_experience) {
                           >*</span
                         >
                       </Label>
-                      <BankEMISelect
-                        v-model="formData[field.name]"
-                        :settlement-rail="activeSettlementRail"
-                        :institutions="field.institution_options ?? []"
-                        :disabled="field.disabled || field.readonly"
-                      />
+                      <div :class="fieldShellClass(field)">
+                        <BankEMISelect
+                          v-model="formData[field.name]"
+                          :settlement-rail="activeSettlementRail"
+                          :institutions="field.institution_options ?? []"
+                          :disabled="field.disabled || field.readonly"
+                        />
+                      </div>
                       <p
                         v-if="field.help_text"
-                        class="text-xs text-slate-500"
+                        class="sr-only"
                       >
                         {{ field.help_text }}
                       </p>
@@ -1200,12 +1364,14 @@ if (import.meta.env.DEV && props.claim_experience) {
                           >*</span
                         >
                       </Label>
-                      <SettlementRailSelect
-                        v-model="formData[field.name]"
-                        :amount="formData.amount || 0"
-                        :bank-code="selectedBankCode || null"
-                        :disabled="field.disabled || field.readonly"
-                      />
+                      <div :class="fieldShellClass(field)">
+                        <SettlementRailSelect
+                          v-model="formData[field.name]"
+                          :amount="formData.amount || 0"
+                          :bank-code="selectedBankCode || null"
+                          :disabled="field.disabled || field.readonly"
+                        />
+                      </div>
                       <p
                         v-if="field.help_text"
                         class="text-xs text-muted-foreground"
@@ -1329,8 +1495,52 @@ if (import.meta.env.DEV && props.claim_experience) {
                     field.name === 'account_number'
                       ? accountNumberInputClass
                       : '',
+                    fieldStateClass(field),
                   ]"
                 />
+                <div
+                  v-if="field.name === 'account_number'"
+                  class="flex flex-wrap items-center gap-2"
+                >
+                  <button
+                    v-if="canUseClaimMobileForAccount"
+                    type="button"
+                    class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800 transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    @click="copyClaimMobileToAccount"
+                  >
+                    Use claim mobile
+                  </button>
+                  <span
+                    v-else-if="accountUsesClaimMobile"
+                    class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
+                  >
+                    Using claim mobile
+                  </span>
+                  <button
+                    v-if="selectedAccountNumber"
+                    type="button"
+                    class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                    @click="clearAccountNumber"
+                  >
+                    Clear
+                  </button>
+                  <details
+                    v-if="field.help_text"
+                    class="relative text-xs text-slate-500"
+                  >
+                    <summary
+                      class="flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-full border border-slate-200 bg-white font-semibold text-slate-500"
+                      aria-label="Account number help"
+                    >
+                      ?
+                    </summary>
+                    <p
+                      class="absolute left-0 z-10 mt-2 w-60 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-snug text-slate-600 shadow-lg"
+                    >
+                      {{ field.help_text }}
+                    </p>
+                  </details>
+                </div>
                 <p
                   v-if="field.help_text && field.name !== 'account_number'"
                   class="text-xs text-muted-foreground"
@@ -1351,14 +1561,16 @@ if (import.meta.env.DEV && props.claim_experience) {
                   {{ getFieldLabel(field) }}
                   <span v-if="field.required" class="text-destructive">*</span>
                 </Label>
-                <PhoneInput
-                  v-model="formData[field.name]"
-                  :error="errors[field.name]"
-                  :placeholder="field.placeholder || ''"
-                  :required="field.required"
-                  :readonly="field.readonly"
-                  :disabled="field.disabled"
-                />
+                <div :class="fieldShellClass(field)">
+                  <PhoneInput
+                    v-model="formData[field.name]"
+                    :error="errors[field.name]"
+                    :placeholder="field.placeholder || ''"
+                    :required="field.required"
+                    :readonly="field.readonly"
+                    :disabled="field.disabled"
+                  />
+                </div>
               </div>
 
               <!-- Textarea -->
@@ -1520,12 +1732,14 @@ if (import.meta.env.DEV && props.claim_experience) {
                   {{ getFieldLabel(field) }}
                   <span v-if="field.required" class="text-destructive">*</span>
                 </Label>
-                <SettlementRailSelect
-                  v-model="formData[field.name]"
-                  :amount="formData.amount || 0"
-                  :bank-code="selectedBankCode || null"
-                  :disabled="field.disabled || field.readonly"
-                />
+                <div :class="fieldShellClass(field)">
+                  <SettlementRailSelect
+                    v-model="formData[field.name]"
+                    :amount="formData.amount || 0"
+                    :bank-code="selectedBankCode || null"
+                    :disabled="field.disabled || field.readonly"
+                  />
+                </div>
                 <p v-if="errors[field.name]" class="text-sm text-destructive">
                   {{ errors[field.name] }}
                 </p>
@@ -1543,12 +1757,14 @@ if (import.meta.env.DEV && props.claim_experience) {
                   {{ getFieldLabel(field) }}
                   <span v-if="field.required" class="text-destructive">*</span>
                 </Label>
-                <BankEMISelect
-                  v-model="formData[field.name]"
-                  :settlement-rail="activeSettlementRail"
-                  :institutions="field.institution_options ?? []"
-                  :disabled="field.disabled || field.readonly"
-                />
+                <div :class="fieldShellClass(field)">
+                  <BankEMISelect
+                    v-model="formData[field.name]"
+                    :settlement-rail="activeSettlementRail"
+                    :institutions="field.institution_options ?? []"
+                    :disabled="field.disabled || field.readonly"
+                  />
+                </div>
                 <p v-if="errors[field.name]" class="text-sm text-destructive">
                   {{ errors[field.name] }}
                 </p>
