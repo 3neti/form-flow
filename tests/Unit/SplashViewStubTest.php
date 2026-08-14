@@ -30,7 +30,9 @@ it('renders the default splash Pay Code as a full-width dynamic display', functi
         ->toContain('data-testid="form-flow-splash-pay-code"')
         ->toContain('class="flex w-full items-center gap-3 sm:gap-5"')
         ->toContain('class="flex min-w-6 flex-1 flex-col gap-2"')
-        ->toContain('h-0.5 w-full rounded-full bg-foreground/75')
+        ->toContain('form-flow-splash-pay-code-rule')
+        ->toContain('background: currentColor;')
+        ->toContain('color: hsl(var(--foreground));')
         ->toContain('class="min-w-0 max-w-full break-all font-mono font-black uppercase leading-none text-primary"')
         ->not->toContain('aria-hidden="true">||</span>');
 });

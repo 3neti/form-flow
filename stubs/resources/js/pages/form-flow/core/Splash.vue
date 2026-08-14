@@ -274,8 +274,8 @@ if (import.meta.env.DEV && props.claim_experience) {
             class="flex w-full items-center gap-3 sm:gap-5"
           >
             <span class="flex min-w-6 flex-1 flex-col gap-2">
-              <span class="h-0.5 w-full rounded-full bg-foreground/75" />
-              <span class="h-0.5 w-full rounded-full bg-foreground/75" />
+              <span class="form-flow-splash-pay-code-rule" />
+              <span class="form-flow-splash-pay-code-rule" />
             </span>
             <span
               :style="voucherCodeDisplayStyle"
@@ -284,8 +284,8 @@ if (import.meta.env.DEV && props.claim_experience) {
               {{ voucher_code }}
             </span>
             <span class="flex min-w-6 flex-1 flex-col gap-2">
-              <span class="h-0.5 w-full rounded-full bg-foreground/75" />
-              <span class="h-0.5 w-full rounded-full bg-foreground/75" />
+              <span class="form-flow-splash-pay-code-rule" />
+              <span class="form-flow-splash-pay-code-rule" />
             </span>
           </div>
         </div>
@@ -468,6 +468,16 @@ if (import.meta.env.DEV && props.claim_experience) {
     max-width: 14rem;
     max-height: 4.5rem;
   }
+}
+
+.form-flow-splash-pay-code-rule {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 9999px;
+  background: currentColor;
+  color: hsl(var(--foreground));
+  opacity: 0.75;
 }
 
 /* Prose overrides for custom splash content */
