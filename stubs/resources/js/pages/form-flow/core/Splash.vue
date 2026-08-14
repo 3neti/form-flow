@@ -84,6 +84,28 @@ let intervalId: ReturnType<typeof setInterval> | null = null;
 // Detect disburse flow from voucher_code presence
 const isDisburseFlow = computed(() => !!props.voucher_code);
 
+const voucherCodeSizeClass = computed(() => {
+  const length = String(props.voucher_code ?? "").length;
+
+  if (length <= 4) {
+    return "text-6xl sm:text-7xl";
+  }
+
+  if (length <= 8) {
+    return "text-5xl sm:text-6xl";
+  }
+
+  if (length <= 14) {
+    return "text-4xl sm:text-5xl";
+  }
+
+  if (length <= 22) {
+    return "text-3xl sm:text-4xl";
+  }
+
+  return "text-2xl sm:text-3xl";
+});
+
 // Detect content type and render appropriately
 const contentType = computed(() => {
   const trimmed = props.content.trim();
@@ -214,9 +236,9 @@ if (import.meta.env.DEV && props.claim_experience) {
     v-if="is_default_splash"
     class="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-5 py-8 select-none"
   >
-    <Card class="mx-auto max-w-md border-0 bg-card/80 shadow-sm">
+    <Card class="mx-auto w-full max-w-3xl border-0 bg-card/90 shadow-sm">
       <CardContent
-        class="flex min-h-[620px] flex-col items-center justify-center px-6 py-8 text-center"
+        class="flex min-h-[620px] flex-col items-center justify-center px-5 py-8 text-center sm:min-h-[680px] sm:px-10"
       >
         <!-- Hero logo -->
         <img
@@ -228,25 +250,36 @@ if (import.meta.env.DEV && props.claim_experience) {
 
         <p
           v-if="app_name"
-          class="mb-6 text-base font-medium tracking-wide text-gray-400 animate-fade-in-delay dark:text-gray-500 sm:text-lg"
+          class="mb-7 text-base font-semibold tracking-wide text-foreground/80 animate-fade-in-delay sm:text-lg"
         >
           {{ app_name }}
         </p>
 
-        <div v-if="voucher_code" class="mb-8 text-center animate-fade-in-delay">
+        <div
+          v-if="voucher_code"
+          class="mb-10 w-full text-center animate-fade-in-delay"
+        >
           <p
-            class="mb-2 text-[11px] uppercase tracking-[0.2em] text-gray-400 dark:text-gray-600"
+            class="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-foreground/80"
           >
             Redeeming
           </p>
 
-          <span
-            class="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-5 py-1.5 font-mono text-lg font-semibold tracking-widest text-primary sm:text-xl"
+          <div
+            data-testid="form-flow-splash-pay-code"
+            class="flex w-full items-center gap-3 sm:gap-4"
           >
-            <span class="text-primary/40" aria-hidden="true">||</span>
-            {{ voucher_code }}
-            <span class="text-primary/40" aria-hidden="true">||</span>
-          </span>
+            <span class="h-0.5 min-w-5 flex-1 rounded-full bg-primary/75" />
+            <span
+              :class="[
+                voucherCodeSizeClass,
+                'min-w-0 max-w-full break-all font-mono font-black uppercase leading-none tracking-[0.08em] text-primary',
+              ]"
+            >
+              {{ voucher_code }}
+            </span>
+            <span class="h-0.5 min-w-5 flex-1 rounded-full bg-primary/75" />
+          </div>
         </div>
 
         <div class="w-full max-w-xs space-y-3">
@@ -258,7 +291,7 @@ if (import.meta.env.DEV && props.claim_experience) {
               />
             </div>
 
-            <p class="text-center text-[11px] text-muted-foreground">
+            <p class="text-center text-[11px] font-medium text-foreground/75">
               {{ remainingSeconds }}s
             </p>
           </div>
@@ -267,14 +300,14 @@ if (import.meta.env.DEV && props.claim_experience) {
         <footer class="mt-6 space-y-0.5 text-center">
           <p
             v-if="app_author"
-            class="text-[10px] text-gray-300 dark:text-gray-700"
+            class="text-[10px] font-medium text-foreground/65"
           >
             {{ app_author }}
           </p>
 
           <p
             v-if="copyright_text"
-            class="text-[10px] text-gray-300 dark:text-gray-700"
+            class="text-[10px] font-medium text-foreground/65"
           >
             {{ copyright_text }}
           </p>
