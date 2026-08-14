@@ -41,7 +41,6 @@ import {
   destinationInstitution,
   payoutDestinationRouteIcons,
   payoutDestinationRouteSegments,
-  payoutRouteSentence,
 } from "@/components/x-change/support/payoutDestinations";
 import {
   isPayoutRoutePreviewVisible,
@@ -298,16 +297,6 @@ const payoutRouteSegmentsList = computed(() =>
 );
 const payoutRouteIconsList = computed(() =>
   payoutDestinationRouteIcons({
-    amount: formData.value.amount
-      ? formatBadgeValue(props.fields.find((field) => field.name === "amount"))
-      : null,
-    bankCode: selectedBankCode.value,
-    accountNumber: selectedAccountNumber.value,
-    settlementRail: selectedSettlementRail.value,
-  }),
-);
-const payoutRouteSummary = computed(() =>
-  payoutRouteSentence({
     amount: formData.value.amount
       ? formatBadgeValue(props.fields.find((field) => field.name === "amount"))
       : null,
@@ -779,6 +768,10 @@ function copyClaimMobileToAccount(): void {
 function clearAccountNumber(): void {
   formData.value.account_number = "";
   manualOverrides.value.account_number = false;
+}
+
+function shouldShowPayoutRouteSegmentText(index: number): boolean {
+  return index === 0 || index === payoutRouteSegmentsList.value.length - 1;
 }
 
 // Form submission
@@ -1789,9 +1782,6 @@ if (import.meta.env.DEV && props.claim_experience) {
                 >
                   Send to
                 </p>
-                <p class="mt-1 text-base font-semibold leading-snug text-slate-950 dark:text-white">
-                  {{ payoutRouteSummary }}
-                </p>
               </div>
               <Badge
                 variant="outline"
@@ -1802,25 +1792,29 @@ if (import.meta.env.DEV && props.claim_experience) {
                 }}
               </Badge>
             </div>
-            <div class="mt-3 flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap">
+            <div class="mt-3 flex min-w-0 items-center gap-2 overflow-hidden whitespace-nowrap">
               <template
                 v-for="(segment, index) in payoutRouteSegmentsList"
                 :key="`${segment}-${index}`"
               >
                 <span
-                  class="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-950 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
+                  class="inline-flex min-w-0 items-center text-sm font-semibold text-slate-950 dark:text-white"
                   :class="{
-                    'shrink-0 border-blue-200 bg-blue-50 text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-100':
-                      index === 0,
+                    'shrink-0 text-blue-900 dark:text-blue-100': index === 0,
                     'shrink font-mono': index === payoutRouteSegmentsList.length - 1,
                   }"
                 >
                   <PayoutDestinationIcon
                     :icon-asset="payoutRouteIconsList[index]"
                     :alt="segment"
-                    size-class="h-3.5 w-3.5"
+                    size-class="h-5 w-5"
                   />
-                  <span class="min-w-0 truncate">{{ segment }}</span>
+                  <span
+                    v-if="shouldShowPayoutRouteSegmentText(index)"
+                    class="min-w-0 truncate"
+                  >
+                    {{ segment }}
+                  </span>
                 </span>
                 <span
                   v-if="index < payoutRouteSegmentsList.length - 1"
