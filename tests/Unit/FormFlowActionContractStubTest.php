@@ -42,6 +42,23 @@ it('uses shared form flow actions from the generic form stub', function (): void
         ->not->toContain('const primaryButtonClass = computed');
 });
 
+it('renders disbursement details as large mobile-safe destination controls', function (): void {
+    $stub = file_get_contents(
+        dirname(__DIR__, 2).'/stubs/resources/js/pages/form-flow/core/GenericForm.vue',
+    );
+
+    expect($stub)
+        ->toContain('const accountNumberInputClass')
+        ->toContain('h-16 rounded-xl')
+        ->toContain('text-2xl font-semibold tabular-nums')
+        ->toContain('const compactPayoutLabelClass')
+        ->toContain('uppercase tracking-[0.18em]')
+        ->toContain('field.name === \'account_number\' ? \'numeric\' : undefined')
+        ->toContain('Send to')
+        ->toContain('rounded-2xl border border-blue-100 bg-blue-50/70')
+        ->toContain('Check the destination before continuing. Maya Wallet and Maya Bank');
+});
+
 it('exposes the package version strip in the shared form flow screen stub', function (): void {
     $stub = file_get_contents(
         dirname(__DIR__, 2).'/stubs/resources/js/pages/form-flow/core/components/FormFlowScreen.vue',

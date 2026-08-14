@@ -261,6 +261,10 @@ const payoutRouteSummary = computed(() =>
     settlementRail: selectedSettlementRail.value,
   }),
 );
+const accountNumberInputClass =
+  "h-16 rounded-xl border-slate-200 bg-white px-4 text-2xl font-semibold tabular-nums tracking-wide text-slate-950 shadow-sm placeholder:text-base placeholder:font-medium placeholder:tracking-normal focus-visible:ring-blue-500 dark:border-slate-800 dark:bg-slate-950 dark:text-white";
+const compactPayoutLabelClass =
+  "text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500";
 const uiVariant = computed(() => normalizeFormFlowUiVariant(props.ui_variant));
 const isCompactUi = computed(() => uiVariant.value === "compact");
 const isImmersiveUi = computed(() => uiVariant.value === "immersive");
@@ -1046,7 +1050,12 @@ if (import.meta.env.DEV && props.claim_experience) {
                     >
                       <Label
                         :for="field.name"
-                        :class="{ 'text-destructive': errors[field.name] }"
+                        :class="[
+                          field.name === 'account_number'
+                            ? compactPayoutLabelClass
+                            : '',
+                          { 'text-destructive': errors[field.name] },
+                        ]"
                       >
                         {{ getFieldLabel(field) }}
                         <span v-if="field.required" class="text-destructive"
@@ -1064,15 +1073,21 @@ if (import.meta.env.DEV && props.claim_experience) {
                         :step="field.step"
                         :readonly="field.readonly"
                         :disabled="field.disabled"
+                        :inputmode="
+                          field.name === 'account_number' ? 'numeric' : undefined
+                        "
+                        :autocomplete="
+                          field.name === 'account_number' ? 'off' : undefined
+                        "
                         :class="[
                           { 'border-destructive': errors[field.name] },
                           field.name === 'account_number'
-                            ? 'font-bold text-lg tracking-widest text-center placeholder:text-center'
+                            ? accountNumberInputClass
                             : '',
                         ]"
                       />
                       <p
-                        v-if="field.help_text"
+                        v-if="field.help_text && field.name !== 'account_number'"
                         class="text-xs text-muted-foreground"
                       >
                         {{ field.help_text }}
@@ -1141,7 +1156,10 @@ if (import.meta.env.DEV && props.claim_experience) {
                     <template v-else-if="field.type === 'bank_account'">
                       <Label
                         :for="field.name"
-                        :class="{ 'text-destructive': errors[field.name] }"
+                        :class="[
+                          compactPayoutLabelClass,
+                          { 'text-destructive': errors[field.name] },
+                        ]"
                       >
                         {{ getFieldLabel(field) }}
                         <span v-if="field.required" class="text-destructive"
@@ -1156,7 +1174,7 @@ if (import.meta.env.DEV && props.claim_experience) {
                       />
                       <p
                         v-if="field.help_text"
-                        class="text-xs text-muted-foreground"
+                        class="text-xs text-slate-500"
                       >
                         {{ field.help_text }}
                       </p>
@@ -1172,7 +1190,10 @@ if (import.meta.env.DEV && props.claim_experience) {
                     <template v-else-if="field.type === 'settlement_rail'">
                       <Label
                         :for="field.name"
-                        :class="{ 'text-destructive': errors[field.name] }"
+                        :class="[
+                          compactPayoutLabelClass,
+                          { 'text-destructive': errors[field.name] },
+                        ]"
                       >
                         {{ getFieldLabel(field) }}
                         <span v-if="field.required" class="text-destructive"
@@ -1276,7 +1297,12 @@ if (import.meta.env.DEV && props.claim_experience) {
               >
                 <Label
                   :for="field.name"
-                  :class="{ 'text-destructive': errors[field.name] }"
+                  :class="[
+                    field.name === 'account_number'
+                      ? compactPayoutLabelClass
+                      : '',
+                    { 'text-destructive': errors[field.name] },
+                  ]"
                 >
                   {{ getFieldLabel(field) }}
                   <span v-if="field.required" class="text-destructive">*</span>
@@ -1292,8 +1318,25 @@ if (import.meta.env.DEV && props.claim_experience) {
                   :step="field.step"
                   :readonly="field.readonly"
                   :disabled="field.disabled"
-                  :class="{ 'border-destructive': errors[field.name] }"
+                  :inputmode="
+                    field.name === 'account_number' ? 'numeric' : undefined
+                  "
+                  :autocomplete="
+                    field.name === 'account_number' ? 'off' : undefined
+                  "
+                  :class="[
+                    { 'border-destructive': errors[field.name] },
+                    field.name === 'account_number'
+                      ? accountNumberInputClass
+                      : '',
+                  ]"
                 />
+                <p
+                  v-if="field.help_text && field.name !== 'account_number'"
+                  class="text-xs text-muted-foreground"
+                >
+                  {{ field.help_text }}
+                </p>
                 <p v-if="errors[field.name]" class="text-sm text-destructive">
                   {{ errors[field.name] }}
                 </p>
@@ -1469,7 +1512,10 @@ if (import.meta.env.DEV && props.claim_experience) {
               <div v-else-if="field.type === 'settlement_rail'">
                 <Label
                   :for="field.name"
-                  :class="{ 'text-destructive': errors[field.name] }"
+                  :class="[
+                    compactPayoutLabelClass,
+                    { 'text-destructive': errors[field.name] },
+                  ]"
                 >
                   {{ getFieldLabel(field) }}
                   <span v-if="field.required" class="text-destructive">*</span>
@@ -1489,7 +1535,10 @@ if (import.meta.env.DEV && props.claim_experience) {
               <div v-else-if="field.type === 'bank_account'">
                 <Label
                   :for="field.name"
-                  :class="{ 'text-destructive': errors[field.name] }"
+                  :class="[
+                    compactPayoutLabelClass,
+                    { 'text-destructive': errors[field.name] },
+                  ]"
                 >
                   {{ getFieldLabel(field) }}
                   <span v-if="field.required" class="text-destructive">*</span>
@@ -1509,20 +1558,23 @@ if (import.meta.env.DEV && props.claim_experience) {
 
           <div
             v-if="payoutRouteVisible"
-            class="rounded-xl border border-primary/15 bg-primary/[0.035] p-3"
+            class="rounded-2xl border border-blue-100 bg-blue-50/70 p-3.5 shadow-sm dark:border-blue-950 dark:bg-blue-950/20"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <p
-                  class="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/70"
+                  class="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700 dark:text-blue-300"
                 >
-                  Money route
+                  Send to
                 </p>
-                <p class="mt-1 text-sm font-semibold text-foreground">
+                <p class="mt-1 text-base font-semibold leading-snug text-slate-950 dark:text-white">
                   {{ payoutRouteSummary }}
                 </p>
               </div>
-              <Badge variant="outline" class="shrink-0 text-[10px]">
+              <Badge
+                variant="outline"
+                class="shrink-0 border-blue-200 bg-white/80 text-[10px] text-blue-900 dark:border-blue-900 dark:bg-blue-950/80 dark:text-blue-100"
+              >
                 {{
                   selectedDestination.category === "wallet" ? "Wallet" : "Bank"
                 }}
@@ -1534,12 +1586,12 @@ if (import.meta.env.DEV && props.claim_experience) {
                 :key="`${segment}-${index}`"
               >
                 <span
-                  class="inline-flex max-w-full min-w-0 items-center gap-1 rounded-full border border-border/70 bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground shadow-sm"
+                  class="inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-950 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-white"
                 >
                   <PayoutDestinationIcon
                     :icon-asset="payoutRouteIconsList[index]"
                     :alt="segment"
-                    size-class="h-3 w-3"
+                    size-class="h-3.5 w-3.5"
                   />
                   <span class="break-words">{{ segment }}</span>
                 </span>
@@ -1552,7 +1604,7 @@ if (import.meta.env.DEV && props.claim_experience) {
                 </span>
               </template>
             </div>
-            <p class="mt-2 text-[11px] text-muted-foreground">
+            <p class="mt-2 text-[11px] leading-snug text-slate-500">
               Check the destination before continuing. Maya Wallet and Maya Bank
               are different destinations.
             </p>
