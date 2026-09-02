@@ -187,6 +187,7 @@ class FormFlowController extends Controller
             'step_index' => $currentStepIndex,
             'collected_data' => $state['collected_data'] ?? [],
             'claim_experience' => $this->claimExperience($state),
+            'claim_presentation' => $this->claimPresentation($state),
         ]);
     }
 
@@ -379,6 +380,18 @@ class FormFlowController extends Controller
     {
         return data_get($state, 'instructions.metadata.claim_experience')
             ?? data_get($state, 'metadata.claim_experience');
+    }
+
+    /**
+     * @param  array<string, mixed>  $state
+     * @return array<string, mixed>|null
+     */
+    private function claimPresentation(array $state): ?array
+    {
+        $presentation = data_get($state, 'instructions.metadata.claim_presentation')
+            ?? data_get($state, 'metadata.claim_presentation');
+
+        return is_array($presentation) ? $presentation : null;
     }
 
     /**

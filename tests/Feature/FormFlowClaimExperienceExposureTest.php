@@ -99,6 +99,49 @@ it('passes claim experience to the active step page', function () {
         );
 });
 
+it('passes claim presentation to the active splash step page', function () {
+    $referenceId = 'claim-presentation-active-'.uniqid();
+
+    $createResponse = $this->postJson('/form-flow/start', [
+        'reference_id' => $referenceId,
+        'steps' => [
+            [
+                'handler' => 'splash',
+                'config' => [
+                    'timeout' => 0,
+                ],
+            ],
+        ],
+        'callbacks' => [
+            'on_complete' => 'https://example.com/callback',
+        ],
+        'metadata' => [
+            'claim_presentation' => [
+                'schema' => 'x-change.claim-presentation.v1',
+                'title' => 'Accept Invitation',
+                'primary_action_label' => 'Continue',
+                'eyebrow' => 'Invitation code',
+                'subject_label' => 'Invitation code',
+                'intent' => 'commissioning_invitation',
+                'source' => 'flow_default',
+            ],
+        ],
+    ]);
+
+    $createResponse->assertSuccessful();
+
+    $this->get($createResponse->json('flow_url'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('form-flow/core/Splash')
+            ->where('title', 'Accept Invitation')
+            ->where('button_label', 'Continue')
+            ->where('claim_presentation.schema', 'x-change.claim-presentation.v1')
+            ->where('claim_presentation.eyebrow', 'Invitation code')
+            ->where('claim_presentation.intent', 'commissioning_invitation')
+        );
+});
+
 it('passes claim workflow metadata from step config to the active step page', function () {
     $referenceId = 'claim-workflow-active-'.uniqid();
 

@@ -36,3 +36,21 @@ it('renders the default splash Pay Code as a full-width dynamic display', functi
         ->toContain('class="min-w-0 max-w-full break-all font-mono font-black uppercase leading-none text-primary"')
         ->not->toContain('aria-hidden="true">||</span>');
 });
+
+it('lets claim presentation drive splash copy and in-card action placement', function (): void {
+    $stub = file_get_contents(
+        dirname(__DIR__, 2).'/stubs/resources/js/pages/form-flow/core/Splash.vue',
+    );
+
+    expect($stub)
+        ->toContain('interface ClaimPresentation')
+        ->toContain('claim_presentation?: ClaimPresentation | null;')
+        ->toContain('const pageTitle = computed(() => claimPresentationTitle.value ?? props.title ?? "Welcome");')
+        ->toContain('const primaryActionLabel = computed(() => {')
+        ->toContain('const voucherCodeEyebrow = computed(() => {')
+        ->toContain('const splashActionPlacement = computed(() => props.action_placement || "bottom");')
+        ->toContain('<Head :title="pageTitle" />')
+        ->toContain('{{ voucherCodeEyebrow }}')
+        ->toContain(':primary-label="primaryActionLabel"')
+        ->not->toContain('Redeeming');
+});

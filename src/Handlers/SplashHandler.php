@@ -78,15 +78,19 @@ class SplashHandler implements FormHandlerInterface, FormHandlerPreviewInterface
         $voucherCode = $step->config['voucher_code'] ?? $context['voucher_code'] ?? $context['code'] ?? null;
 
         $claimExperience = $context['claim_experience'] ?? null;
+        $claimPresentation = $this->claimPresentation($context);
+        $presentationTitle = data_get($claimPresentation, 'title');
+        $presentationAction = data_get($claimPresentation, 'primary_action_label');
         $splashAlreadyConsumed = (bool) data_get($claimExperience, 'consumed.splash', false);
 
         $props = [
             'flow_id' => $context['flow_id'] ?? null,
             'step_index' => $context['step_index'] ?? 0,
-            'title' => $title,
+            'title' => $presentationTitle ?: $title,
             'timeout' => $timeout,
-            'button_label' => config('splash.button_label', 'Continue Now'),
+            'button_label' => $presentationAction ?: ($step->config['button_label'] ?? config('splash.button_label', 'Continue Now')),
             'claim_experience' => $context['claim_experience'] ?? null,
+            'claim_presentation' => $claimPresentation,
             'claim_experience_warnings' => array_values(array_filter([
                 $splashAlreadyConsumed ? 'duplicate_splash_candidate' : null,
             ])),
@@ -108,7 +112,8 @@ class SplashHandler implements FormHandlerInterface, FormHandlerPreviewInterface
             $props['is_default_splash'] = true;
             $props['content'] = '';
             $props['voucher_code'] = $voucherCode;
-            $props['app_name'] = $step->config['app_name'] ?? config('app.name', 'Laravel');
+            $props['app_name'] = data_get($claimPresentation, 'title')
+                ?: ($step->config['app_name'] ?? config('app.name', 'Laravel'));
             $props['app_logo'] = $step->config['app_logo'] ?? config('splash.app_logo', '/images/logo-orange.png');
             $props['app_author'] = config('splash.app_author', '3neti R&D OPC');
             $props['copyright_text'] = "© {$copyrightYear} {$copyrightHolder}";
@@ -126,6 +131,17 @@ class SplashHandler implements FormHandlerInterface, FormHandlerPreviewInterface
         }
 
         return $props;
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array<string, mixed>|null
+     */
+    protected function claimPresentation(array $context): ?array
+    {
+        $presentation = $context['claim_presentation'] ?? null;
+
+        return is_array($presentation) ? $presentation : null;
     }
 
     /**
@@ -162,10 +178,10 @@ class SplashHandler implements FormHandlerInterface, FormHandlerPreviewInterface
             $html .= '</div>';
         }
 
-        // Redemption message if voucher code available
+        // Voucher context if a code is available
         if ($voucherCode) {
             $html .= '<div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">';
-            $html .= '<p class="text-lg text-blue-900 dark:text-blue-100 font-medium">Redeeming voucher</p>';
+            $html .= '<p class="text-lg text-blue-900 dark:text-blue-100 font-medium">Voucher code</p>';
             $html .= '<p class="text-2xl font-mono font-bold text-blue-600 dark:text-blue-400 mt-1">'.htmlspecialchars($voucherCode).'</p>';
             $html .= '</div>';
         } else {

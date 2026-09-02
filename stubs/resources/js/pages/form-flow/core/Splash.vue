@@ -29,6 +29,15 @@ interface ClaimExperience {
   diagnostics?: ClaimExperienceDiagnostics;
 }
 
+interface ClaimPresentation {
+  title?: string;
+  primary_action_label?: string;
+  eyebrow?: string;
+  subject_label?: string;
+  intent?: string;
+  source?: string;
+}
+
 interface PackageVersion {
   name: string;
   version: string;
@@ -51,6 +60,7 @@ interface Props {
   show_package_versions?: boolean;
   action_placement?: "inline" | "bottom" | "bottom_sticky" | "viewport_bottom" | string | null;
   claim_experience?: ClaimExperience | null;
+  claim_presentation?: ClaimPresentation | null;
   preview_mode?: boolean;
 }
 
@@ -68,6 +78,7 @@ const props = withDefaults(defineProps<Props>(), {
   show_package_versions: false,
   action_placement: undefined,
   claim_experience: undefined,
+  claim_presentation: undefined,
   preview_mode: false,
 });
 
@@ -83,6 +94,38 @@ let intervalId: ReturnType<typeof setInterval> | null = null;
 
 // Detect disburse flow from voucher_code presence
 const isDisburseFlow = computed(() => !!props.voucher_code);
+
+const claimPresentationTitle = computed(() => {
+  const title = props.claim_presentation?.title?.trim();
+
+  return title && title.length > 0 ? title : undefined;
+});
+
+const pageTitle = computed(() => claimPresentationTitle.value ?? props.title ?? "Welcome");
+
+const primaryActionLabel = computed(() => {
+  const label = props.claim_presentation?.primary_action_label?.trim();
+
+  return label && label.length > 0 ? label : props.button_label;
+});
+
+const defaultSplashHeading = computed(() => {
+  return claimPresentationTitle.value ?? props.app_name;
+});
+
+const voucherCodeEyebrow = computed(() => {
+  const eyebrow =
+    props.claim_presentation?.eyebrow?.trim() ??
+    props.claim_presentation?.subject_label?.trim();
+
+  return eyebrow && eyebrow.length > 0
+    ? eyebrow
+    : isDisburseFlow.value
+      ? "Pay Code"
+      : "Code";
+});
+
+const splashActionPlacement = computed(() => props.action_placement || "bottom");
 
 const voucherCodeDisplayStyle = computed(() => {
   const length = String(props.voucher_code ?? "").length;
@@ -231,7 +274,7 @@ if (import.meta.env.DEV && props.claim_experience) {
 </script>
 
 <template>
-  <Head :title="title || 'Welcome'" />
+  <Head :title="pageTitle" />
 
   <!-- ============================================================ -->
   <!-- Default Splash: modal-style launch screen                    -->
@@ -253,10 +296,10 @@ if (import.meta.env.DEV && props.claim_experience) {
         />
 
         <p
-          v-if="app_name"
+          v-if="defaultSplashHeading"
           class="mb-7 text-base font-semibold tracking-wide text-foreground/80 animate-fade-in-delay sm:text-lg"
         >
-          {{ app_name }}
+          {{ defaultSplashHeading }}
         </p>
 
         <div
@@ -266,7 +309,7 @@ if (import.meta.env.DEV && props.claim_experience) {
           <p
             class="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-foreground/80"
           >
-            Redeeming
+            {{ voucherCodeEyebrow }}
           </p>
 
           <div
@@ -328,11 +371,11 @@ if (import.meta.env.DEV && props.claim_experience) {
         </footer>
 
         <FormFlowActions
-          :action-placement="action_placement || 'viewport_bottom'"
+          :action-placement="splashActionPlacement"
           :processing="submitting"
           :primary-disabled="submitting"
           :show-secondary="false"
-          :primary-label="button_label"
+          :primary-label="primaryActionLabel"
           primary-type="button"
           variant="immersive"
           @primary="handleContinue"
@@ -419,11 +462,11 @@ if (import.meta.env.DEV && props.claim_experience) {
         />
 
         <FormFlowActions
-          :action-placement="action_placement || 'viewport_bottom'"
+          :action-placement="splashActionPlacement"
           :processing="submitting"
           :primary-disabled="submitting"
           :show-secondary="false"
-          :primary-label="button_label"
+          :primary-label="primaryActionLabel"
           primary-type="button"
           :variant="isDisburseFlow ? 'immersive' : 'default'"
           @primary="handleContinue"
