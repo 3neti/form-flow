@@ -69,7 +69,7 @@ const containerClass = computed(() => {
 
   if (normalizedActionPlacement.value === "viewport_bottom") {
     return [
-      "fixed inset-x-0 z-30 mx-auto grid w-full max-w-md gap-2 px-5 sm:max-w-lg",
+      "fixed inset-x-0 z-30 mx-auto grid w-full max-w-md gap-2 px-5 sm:max-w-lg md:left-[var(--sidebar-width,0px)] md:group-has-data-[collapsible=icon]/sidebar-wrapper:left-[var(--sidebar-width-icon,0px)] md:group-has-data-[variant=inset]/sidebar-wrapper:right-2",
       columns,
     ];
   }
