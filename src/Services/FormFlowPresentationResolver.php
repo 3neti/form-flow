@@ -18,6 +18,19 @@ final class FormFlowPresentationResolver
     {
         return [
             'schema' => self::Schema,
+            'appearance' => [
+                'mode' => 'light',
+                'light' => ['canvas' => '#ffffff', 'surface' => '#ffffff', 'foreground' => '#0f172a', 'muted' => '#64748b', 'border' => '#e2e8f0', 'accent' => '#0f172a', 'accent_foreground' => '#ffffff'],
+                'dark' => ['canvas' => '#0f172a', 'surface' => '#1e293b', 'foreground' => '#f8fafc', 'muted' => '#cbd5e1', 'border' => '#475569', 'accent' => '#f8fafc', 'accent_foreground' => '#0f172a'],
+            ],
+            'icons' => [
+                'size' => 48,
+                'review' => ['name' => 'receipt', 'color' => 'foreground'],
+                'pending' => ['name' => 'clock', 'color' => '#d97706'],
+                'success' => ['name' => 'circle-check', 'color' => '#16a34a'],
+                'attention' => ['name' => 'triangle-alert', 'color' => '#d97706'],
+                'error' => ['name' => 'circle-alert', 'color' => '#dc2626'],
+            ],
             'brand' => ['name' => null, 'logo' => null, 'placement' => 'top_left', 'logo_height' => 32, 'logo_max_width' => 112],
             'layout' => ['density' => 'compact', 'capture_surface' => 'fill_available', 'scrolling' => 'when_needed'],
             'actions' => ['placement' => 'viewport_bottom', 'primary_position' => 'right', 'secondary_position' => 'left', 'reserve_content_space' => true, 'primary_label' => null, 'secondary_label' => null],
@@ -29,8 +42,26 @@ final class FormFlowPresentationResolver
     /** @param array<string, mixed> $value */
     private function validate(array $value, string $path): void
     {
-        Validator::make([$path => $value], [
-            $path => 'array:schema,profile,brand,layout,actions,progress,diagnostics',
+        $rules = [
+            "$path.appearance" => 'sometimes|array:mode,light,dark',
+            "$path.appearance.mode" => 'sometimes|in:light,dark,system',
+            "$path.icons" => 'sometimes|array:size,review,pending,success,attention,error',
+            "$path.icons.size" => 'sometimes|integer|min:16|max:64',
+        ];
+        foreach (['light', 'dark'] as $mode) {
+            $rules["$path.appearance.$mode"] = 'sometimes|array:canvas,surface,foreground,muted,border,accent,accent_foreground';
+            foreach (['canvas', 'surface', 'foreground', 'muted', 'border', 'accent', 'accent_foreground'] as $token) {
+                $rules["$path.appearance.$mode.$token"] = ['sometimes', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'];
+            }
+        }
+        foreach (['review', 'pending', 'success', 'attention', 'error'] as $role) {
+            $rules["$path.icons.$role"] = 'sometimes|array:name,color';
+            $rules["$path.icons.$role.name"] = 'sometimes|in:receipt,clipboard-check,clock,circle-check,triangle-alert,circle-alert,shield-check';
+            $rules["$path.icons.$role.color"] = ['sometimes', 'string', 'regex:/^(foreground|#[0-9a-fA-F]{6})$/'];
+        }
+        Validator::make([$path => $value], [...$rules,
+
+            $path => 'array:schema,profile,brand,layout,actions,progress,diagnostics,appearance,icons',
             "$path.schema" => 'sometimes|in:'.self::Schema,
             "$path.profile" => 'sometimes|string|max:100',
             "$path.brand" => 'sometimes|array:name,logo,placement,logo_height,logo_max_width',

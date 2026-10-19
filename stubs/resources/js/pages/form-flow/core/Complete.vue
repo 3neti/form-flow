@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FormFlowStatusIcon from "./components/FormFlowStatusIcon.vue";
 import FormFlowPresentation from "./components/FormFlowPresentation.vue";
 import type { FormFlowPresentation as PresentationPolicy } from "./components/formFlowPresentation";
 import { Head, router } from "@inertiajs/vue3";
@@ -13,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, CheckCircle2, Clock, Landmark, Route, WalletCards } from "lucide-vue-next";
+import { AlertCircle, Clock, Landmark, Route, WalletCards } from "lucide-vue-next";
 import type { Component } from "vue";
 import { computed, ref, onUnmounted } from "vue";
 import { useFormFlowSummary } from "@/composables/useFormFlowSummary";
@@ -572,7 +573,7 @@ if (import.meta.env.DEV && props.claim_experience) {
       <template v-else>
         <CardHeader class="text-center">
           <div class="flex justify-center mb-4">
-            <CheckCircle2 class="h-12 w-12 text-green-500" aria-hidden="true" />
+            <FormFlowStatusIcon role="success" />
           </div>
           <CardTitle class="text-2xl">Flow Completed</CardTitle>
           <CardDescription

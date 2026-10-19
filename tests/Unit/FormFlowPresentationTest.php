@@ -41,7 +41,7 @@ it('gates diagnostic versions on the server even when YAML requests them', funct
 });
 
 it('freezes live presentation and produces the same contract for preview', function () {
-    config()->set('form-flow.presentation.profiles.example', ['brand' => ['name' => 'Before']]);
+    config()->set('form-flow.presentation.profiles.example', ['brand' => ['name' => 'Before'], 'appearance' => ['light' => ['canvas' => '#fafafa']], 'icons' => ['size' => 40]]);
     $instructions = FormFlowInstructionsData::from([
         'reference_id' => 'presentation-lifecycle',
         'presentation' => ['profile' => 'example'],
@@ -55,8 +55,12 @@ it('freezes live presentation and produces the same contract for preview', funct
     expect($preview[0]->props['presentation'])->toBe($live['instructions']['steps'][0]['config']['presentation'])
         ->and($preview[1]->props['presentation']['progress'])->toBe(['show' => true, 'current' => 2, 'total' => 2]);
     config()->set('form-flow.presentation.profiles.example.brand.name', 'After');
+    config()->set('form-flow.presentation.profiles.example.appearance.light.canvas', '#eeeeee');
+    config()->set('form-flow.presentation.profiles.example.icons.size', 32);
     $stored = app(FormFlowService::class)->getFlowState($live['flow_id']);
-    expect($stored['instructions']['steps'][0]['config']['presentation']['brand']['name'])->toBe('Before');
+    expect($stored['instructions']['steps'][0]['config']['presentation']['brand']['name'])->toBe('Before')
+        ->and($stored['instructions']['steps'][0]['config']['presentation']['appearance']['light']['canvas'])->toBe('#fafafa')
+        ->and($stored['instructions']['steps'][0]['config']['presentation']['icons']['size'])->toBe(40);
     app(FormFlowService::class)->updateStepData($live['flow_id'], 0, ['name' => 'Synthetic']);
     app(FormFlowService::class)->updateStepData($live['flow_id'], 1, []);
     expect(app(FormFlowService::class)->completeFlow($live['flow_id'])['status'])->toBe('completed');
@@ -82,3 +86,28 @@ it('removes package versions from the frozen production state and every preview 
         ->and($preview[0]->props['package_versions'])->toBe([])
         ->and($preview[0]->props['show_package_versions'])->toBeFalse();
 });
+
+it('inherits appearance and icon roles while retaining state-specific defaults', function () {
+    config()->set('form-flow.presentation.profiles.custom', [
+        'appearance' => ['mode' => 'system', 'light' => ['canvas' => '#fafafa']],
+        'icons' => ['size' => 40, 'review' => ['name' => 'clipboard-check', 'color' => '#123456']],
+    ]);
+    $result = app(FormFlowPresentationResolver::class)->resolve(['profile' => 'custom']);
+    expect($result['appearance']['mode'])->toBe('system')
+        ->and($result['appearance']['light']['canvas'])->toBe('#fafafa')
+        ->and($result['icons']['size'])->toBe(40)
+        ->and($result['icons']['review']['name'])->toBe('clipboard-check')
+        ->and($result['icons']['pending']['name'])->toBe('clock')
+        ->and($result['icons']['success']['color'])->toBe('#16a34a');
+});
+
+it('rejects unsafe or unsupported appearance and icon settings', function (array $presentation) {
+    app(FormFlowPresentationResolver::class)->resolve($presentation);
+})->with([
+    [['appearance' => ['mode' => 'auto']]],
+    [['appearance' => ['light' => ['canvas' => 'url(https://example.test)']]]],
+    [['appearance' => ['light' => ['unknown' => '#ffffff']]]],
+    [['icons' => ['size' => 100]]],
+    [['icons' => ['review' => ['name' => 'custom-html']]]],
+    [['icons' => ['success' => ['color' => 'red']]]],
+])->throws(ValidationException::class);
