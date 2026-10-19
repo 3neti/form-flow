@@ -28,13 +28,10 @@ it('renders the default splash Pay Code as a full-width dynamic display', functi
         ->toContain('fontSize = "4.5rem"')
         ->toContain('letterSpacing: "0.08em"')
         ->toContain('data-testid="form-flow-splash-pay-code"')
-        ->toContain('class="flex w-full items-center gap-3 sm:gap-5"')
-        ->toContain('class="flex min-w-6 flex-1 flex-col gap-2"')
-        ->toContain('form-flow-splash-pay-code-rule')
-        ->toContain('background: currentColor;')
-        ->toContain('color: hsl(var(--foreground));')
-        ->toContain('class="min-w-0 max-w-full break-all font-mono font-black uppercase leading-none text-primary"')
-        ->not->toContain('aria-hidden="true">||</span>');
+        ->toContain('class="@container flex w-full items-center justify-center"')
+        ->toContain('whitespace-nowrap')
+        ->toContain('{{ `|| ${voucher_code} ||` }}')
+        ->not->toContain('break-all');
 });
 
 it('lets claim presentation drive splash copy and in-card action placement', function (): void {

@@ -75,7 +75,8 @@ class SplashHandler implements FormHandlerInterface, FormHandlerPreviewInterface
         $title = $step->config['title'] ?? null;
 
         // Extract voucher code from config or context
-        $voucherCode = $step->config['voucher_code'] ?? $context['voucher_code'] ?? $context['code'] ?? null;
+        $voucherCode = (($context['preview_mode'] ?? false) ? ($context['preview_voucher_code'] ?? null) : null)
+            ?? $step->config['voucher_code'] ?? $context['voucher_code'] ?? $context['code'] ?? null;
 
         $claimExperience = $context['claim_experience'] ?? null;
         $claimPresentation = $this->claimPresentation($context);

@@ -151,7 +151,7 @@ const voucherCodeDisplayStyle = computed(() => {
   }
 
   return {
-    fontSize,
+    fontSize: `min(${fontSize}, ${130 / (length + 6)}cqi)`,
     letterSpacing: "0.08em",
   };
 });
@@ -318,22 +318,12 @@ if (import.meta.env.DEV && props.claim_experience) {
 
           <div
             data-testid="form-flow-splash-pay-code"
-            class="flex w-full items-center gap-3 sm:gap-5"
+            class="@container flex w-full items-center justify-center"
           >
-            <span class="flex min-w-6 flex-1 flex-col gap-2">
-              <span class="form-flow-splash-pay-code-rule" />
-              <span class="form-flow-splash-pay-code-rule" />
-            </span>
             <span
               :style="voucherCodeDisplayStyle"
-              class="min-w-0 max-w-full break-all font-mono font-black uppercase leading-none text-primary"
-            >
-              {{ voucher_code }}
-            </span>
-            <span class="flex min-w-6 flex-1 flex-col gap-2">
-              <span class="form-flow-splash-pay-code-rule" />
-              <span class="form-flow-splash-pay-code-rule" />
-            </span>
+              class="max-w-full whitespace-nowrap font-mono font-black uppercase leading-none text-primary"
+            >{{ `|| ${voucher_code} ||` }}</span>
           </div>
         </div>
 
@@ -519,15 +509,6 @@ if (import.meta.env.DEV && props.claim_experience) {
   }
 }
 
-.form-flow-splash-pay-code-rule {
-  display: block;
-  width: 100%;
-  height: 2px;
-  border-radius: 9999px;
-  background: currentColor;
-  color: hsl(var(--foreground));
-  opacity: 0.75;
-}
 
 /* Prose overrides for custom splash content */
 .prose :deep(img) {

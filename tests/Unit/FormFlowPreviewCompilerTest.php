@@ -1,8 +1,11 @@
 <?php
 
+use Illuminate\Http\Request;
 use LBHurtado\FormFlowManager\Contracts\FormHandlerPreviewInterface;
 use LBHurtado\FormFlowManager\Data\FormFlowInstructionsData;
+use LBHurtado\FormFlowManager\Data\FormFlowStepData;
 use LBHurtado\FormFlowManager\Handlers\FormHandler;
+use LBHurtado\FormFlowManager\Handlers\SplashHandler;
 use LBHurtado\FormFlowManager\Services\FormFlowPreviewCompiler;
 
 test('preview compiler preserves the exact ordered form fields and marks screens inert', function () {
@@ -42,4 +45,18 @@ test('preview compiler preserves the exact ordered form fields and marks screens
 
 test('built in form handler exposes the preview contract', function () {
     expect(app(FormHandler::class))->toBeInstanceOf(FormHandlerPreviewInterface::class);
+});
+
+it('uses a display-only sample code in splash previews without replacing live voucher identifiers', function () {
+    $step = FormFlowStepData::from([
+        'handler' => 'splash', 'config' => ['voucher_code' => 'PV-REAL'],
+    ]);
+    $handler = app(SplashHandler::class);
+    $context = ['preview_voucher_code' => 'AA317'];
+    $preview = $handler->preview($step, $context);
+    $request = Request::create('/synthetic', 'GET', server: ['HTTP_X_INERTIA' => 'true']);
+    $live = $handler->render($step, $context)->toResponse($request)->getData(true);
+    expect($preview['props']['voucher_code'])->toBe('AA317')
+        ->and($live['props']['voucher_code'])->toBe('PV-REAL')
+        ->and($step->config['voucher_code'])->toBe('PV-REAL');
 });
