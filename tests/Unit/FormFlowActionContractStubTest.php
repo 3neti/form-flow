@@ -71,13 +71,13 @@ it('renders disbursement details as large mobile-safe destination controls', fun
         ->not->toContain('payoutRouteSegments({')
         ->not->toContain('payoutRouteIcons({')
         ->not->toContain('payoutRouteSummary')
-        ->toContain('function shouldShowPayoutRouteSegmentText')
-        ->toContain('overflow-hidden whitespace-nowrap')
-        ->toContain('min-w-0 truncate')
-        ->toContain('size-class="h-5 w-5"')
+        ->toContain('const payoutRouteDetails = computed')
+        ->toContain('grid-cols-2 gap-4')
+        ->toContain('[overflow-wrap:anywhere]')
+        ->toContain('size-class="h-5 w-5 shrink-0"')
         ->toContain('sr-only')
         ->toContain('Send to')
-        ->toContain('rounded-2xl border border-blue-100 bg-blue-50/70')
+        ->toContain('rounded-xl border border-blue-100 bg-blue-50/70')
         ->toContain('Check the destination before continuing. Maya Wallet and Maya Bank');
 });
 
