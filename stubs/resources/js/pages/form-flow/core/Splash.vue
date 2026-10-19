@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { initializeTheme } from "@/composables/useTheme";
+import FormFlowHtmlContent from "./components/FormFlowHtmlContent.vue";
 import FormFlowActions from "./components/FormFlowActions.vue";
 import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";
 
@@ -183,6 +184,13 @@ const contentType = computed(() => {
   // Fallback to plain text
   return "text";
 });
+
+const isArtworkSplash = computed(() =>
+  (contentType.value === "html" || contentType.value === "svg")
+  && /<(?:img|svg)\b/i.test(props.content)
+  && !!props.presentation?.layout.artwork_aspect_ratio
+  && props.presentation.layout.artwork_aspect_ratio !== "natural",
+);
 
 const renderedContent = computed(() => {
   switch (contentType.value) {
@@ -383,27 +391,55 @@ if (import.meta.env.DEV && props.claim_experience) {
   <!-- ============================================================ -->
   <div
     v-else
-    :class="
+    class="x-claim-canvas min-w-0"
+    :style="isArtworkSplash && presentation ? { minHeight: 'calc(100svh - 11rem)' } : undefined"
+    :class="[isArtworkSplash ? 'flex-col gap-4' : '',
+
       isDisburseFlow
         ? 'min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 via-background to-background p-4'
         : 'min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4'
-    "
+    ]"
   >
+    <template v-if="isArtworkSplash">
+      <h2 v-if="title" class="text-center text-2xl font-semibold">{{ title }}</h2>
+      <Card class="w-full max-w-2xl min-w-0 gap-0 border-0 py-0 shadow-sm" data-testid="form-flow-splash-artwork-card">
+        <CardContent class="min-w-0 p-0">
+          <FormFlowHtmlContent :html="renderedContent" />
+        </CardContent>
+      </Card>
+      <p v-if="timeoutSeconds > 0" class="text-center text-xs text-muted-foreground" role="status">{{ remainingSeconds }}s</p>
+      <FormFlowVersionStrip :show="show_package_versions" :package-versions="package_versions" context="splash" />
+      <FormFlowActions
+        :action-placement="splashActionPlacement"
+        :processing="submitting"
+        :primary-disabled="submitting"
+        :show-secondary="false"
+        :primary-label="primaryActionLabel"
+        primary-type="button"
+        :variant="isDisburseFlow ? 'immersive' : 'default'"
+        @primary="handleContinue"
+      />
+    </template>
     <Card
+      v-else
       :class="
         isDisburseFlow
-          ? 'w-full max-w-2xl overflow-visible border-0 shadow-sm bg-card/80'
-          : 'w-full max-w-2xl overflow-visible'
+          ? 'min-w-0 w-full max-w-2xl overflow-visible border-0 shadow-sm bg-card/80'
+          : 'min-w-0 w-full max-w-2xl overflow-visible'
       "
     >
       <CardHeader v-if="title">
         <CardTitle class="text-center text-2xl">{{ title }}</CardTitle>
       </CardHeader>
 
-      <CardContent class="space-y-6 overflow-visible">
+      <CardContent class="min-w-0 space-y-6 overflow-visible">
         <!-- Rendered content -->
+        <FormFlowHtmlContent
+          v-if="contentType === 'html' || contentType === 'svg'"
+          :html="renderedContent"
+        />
         <div
-          v-if="contentType !== 'text'"
+          v-else-if="contentType !== 'text'"
           v-html="renderedContent"
           class="prose prose-base max-w-none dark:prose-invert text-center overflow-visible"
         />

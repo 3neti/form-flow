@@ -10,7 +10,7 @@ export interface FormFlowPresentation {
   };
   icons?: { size: number } & Record<ClaimIconRole, { name: ClaimIconName; color: string }>;
   brand: { name: string | null; logo: string | null; placement: 'top_left' | 'center'; logo_height: number; logo_max_width: number };
-  layout: { density: 'default' | 'compact' | 'immersive'; capture_surface: 'fill_available' | 'contained'; scrolling: 'when_needed' };
+  layout: { density: 'default' | 'compact' | 'immersive'; capture_surface: 'fill_available' | 'contained'; scrolling: 'when_needed'; artwork_aspect_ratio?: 'natural' | '1200/630' | '1/1' | '4/3' | '3/2' | '16/9' };
   actions: { placement: 'inline' | 'bottom' | 'bottom_sticky' | 'viewport_bottom'; primary_label: string | null; secondary_label: string | null; reserve_content_space: boolean };
   progress: { show: boolean; current?: number; total?: number };
   diagnostics: { show_versions: boolean };

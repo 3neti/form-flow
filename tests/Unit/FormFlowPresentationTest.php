@@ -111,3 +111,14 @@ it('rejects unsafe or unsupported appearance and icon settings', function (array
     [['icons' => ['review' => ['name' => 'custom-html']]]],
     [['icons' => ['success' => ['color' => 'red']]]],
 ])->throws(ValidationException::class);
+
+it('inherits a bounded artwork aspect ratio without forcing it on generic flows', function () {
+    $resolver = app(FormFlowPresentationResolver::class);
+    expect($resolver->resolve([])['layout']['artwork_aspect_ratio'])->toBe('natural');
+    config()->set('form-flow.presentation.profiles.artwork', ['layout' => ['artwork_aspect_ratio' => '1200/630']]);
+    expect($resolver->resolve(['profile' => 'artwork'])['layout']['artwork_aspect_ratio'])->toBe('1200/630');
+});
+
+it('rejects an unsupported artwork aspect ratio', function () {
+    app(FormFlowPresentationResolver::class)->resolve(['layout' => ['artwork_aspect_ratio' => '1/0']]);
+})->throws(ValidationException::class);
