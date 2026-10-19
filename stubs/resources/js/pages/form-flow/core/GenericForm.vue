@@ -1150,8 +1150,8 @@ if (import.meta.env.DEV && props.claim_experience) {
             :key="groupName"
           >
             <div class="space-y-3">
-              <fieldset class="rounded-lg border bg-muted/5 px-4 pb-4 pt-2">
-                <legend class="px-2 text-sm font-medium text-muted-foreground">
+              <fieldset class="min-w-0 rounded-lg border bg-muted/5 p-0" data-testid="form-flow-field-group">
+                <legend class="mx-2 px-2 text-sm font-medium text-muted-foreground">
                   {{
                     groupName
                       .replace("_", " ")
@@ -1159,11 +1159,11 @@ if (import.meta.env.DEV && props.claim_experience) {
                   }}
                 </legend>
 
-                <div class="mt-2 space-y-3">
+                <div class="min-w-0 space-y-3 px-4 py-3" data-testid="form-flow-field-group-content">
                   <div
                     v-for="field in groupFields"
                     :key="field.name"
-                    class="space-y-2"
+                    class="min-w-0 w-full space-y-2"
                   >
                     <!-- Render field with standard template below -->
                     <template
