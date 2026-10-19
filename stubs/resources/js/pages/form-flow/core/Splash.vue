@@ -285,7 +285,7 @@ if (import.meta.env.DEV && props.claim_experience) {
   <!-- ============================================================ -->
   <div
     v-if="is_default_splash"
-    class="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-5 py-8 select-none"
+    class="x-claim-canvas min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-5 py-8 select-none"
   >
     <Card class="mx-auto w-full max-w-4xl border-0 bg-card/90 shadow-sm">
       <CardContent

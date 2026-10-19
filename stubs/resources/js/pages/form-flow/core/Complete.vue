@@ -338,7 +338,7 @@ if (import.meta.env.DEV && props.claim_experience) {
     <!-- Processing State -->
     <div
       v-if="isProcessing"
-      class="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 via-background to-background px-6"
+      class="x-claim-canvas min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 via-background to-background px-6"
     >
       <!-- Error -->
       <div v-if="showError" class="w-full max-w-sm text-center space-y-6">
@@ -389,7 +389,7 @@ if (import.meta.env.DEV && props.claim_experience) {
     <!-- Completed / Review State -->
     <div
       v-else
-      class="min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-5 py-8"
+      class="x-claim-canvas min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-5 py-8"
     >
       <Card class="mx-auto max-w-md border-0 bg-card/80 shadow-sm">
         <CardContent class="flex flex-col gap-6 px-6 py-8">
@@ -572,7 +572,7 @@ if (import.meta.env.DEV && props.claim_experience) {
       <template v-else>
         <CardHeader class="text-center">
           <div class="flex justify-center mb-4">
-            <CheckCircle2 class="h-16 w-16 text-green-500" />
+            <CheckCircle2 class="h-12 w-12 text-green-500" aria-hidden="true" />
           </div>
           <CardTitle class="text-2xl">Flow Completed</CardTitle>
           <CardDescription
