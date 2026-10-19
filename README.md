@@ -57,6 +57,11 @@ Or publish everything at once:
 php artisan vendor:publish --tag=form-flow-core
 ```
 
+## Presentation guide
+
+See [Configure Form Flow presentation](docs/PRESENTATION.md) for the v1.10.0 baseline and unreleased expanded
+YAML schema, inheritance, artwork, handler integration, limitations, and checks.
+
 ## Configuration
 
 The package configuration is located at `config/form-flow.php`:

@@ -63,7 +63,13 @@ interface Props {
   copyright_text?: string;
   package_versions?: PackageVersion[] | Record<string, string> | null;
   show_package_versions?: boolean;
-  action_placement?: "inline" | "bottom" | "bottom_sticky" | "viewport_bottom" | string | null;
+  action_placement?:
+    | "inline"
+    | "bottom"
+    | "bottom_sticky"
+    | "viewport_bottom"
+    | string
+    | null;
   claim_experience?: ClaimExperience | null;
   claim_presentation?: ClaimPresentation | null;
   preview_mode?: boolean;
@@ -106,7 +112,9 @@ const claimPresentationTitle = computed(() => {
   return title && title.length > 0 ? title : undefined;
 });
 
-const pageTitle = computed(() => claimPresentationTitle.value ?? props.title ?? "Welcome");
+const pageTitle = computed(
+  () => claimPresentationTitle.value ?? props.title ?? "Welcome",
+);
 
 const primaryActionLabel = computed(() => {
   const label = props.claim_presentation?.primary_action_label?.trim();
@@ -130,7 +138,9 @@ const voucherCodeEyebrow = computed(() => {
       : "Code";
 });
 
-const splashActionPlacement = computed(() => props.action_placement || "bottom");
+const splashActionPlacement = computed(
+  () => props.action_placement || "bottom",
+);
 
 const voucherCodeDisplayStyle = computed(() => {
   const length = String(props.voucher_code ?? "").length;
@@ -193,10 +203,13 @@ const splashArtworkSource = computed(() => {
   return template.content.querySelector("img")?.getAttribute("src") ?? null;
 });
 
-const isArtworkSplash = computed(() =>
-  (contentType.value === "html" || contentType.value === "svg")
-  && /<(?:img|svg)\b/i.test(props.content)
-  && (!!props.presentation?.artwork || (!!props.presentation?.layout.artwork_aspect_ratio && props.presentation.layout.artwork_aspect_ratio !== "natural")),
+const isArtworkSplash = computed(
+  () =>
+    (contentType.value === "html" || contentType.value === "svg") &&
+    /<(?:img|svg)\b/i.test(props.content) &&
+    (!!props.presentation?.artwork ||
+      (!!props.presentation?.layout.artwork_aspect_ratio &&
+        props.presentation.layout.artwork_aspect_ratio !== "natural")),
 );
 
 const renderedContent = computed(() => {
@@ -292,228 +305,263 @@ if (import.meta.env.DEV && props.claim_experience) {
 </script>
 
 <template>
-  <FormFlowPresentation :presentation="presentation">
-  <Head :title="pageTitle" />
-
-  <!-- ============================================================ -->
-  <!-- Default Splash: modal-style launch screen                    -->
-  <!-- ============================================================ -->
-  <div
-    v-if="is_default_splash"
-    class="x-claim-canvas min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-5 py-8 select-none"
+  <FormFlowPresentation
+    :presentation="presentation"
+    :screen="presentation?.screen ?? 'splash'"
   >
-    <Card class="mx-auto w-full max-w-4xl border-0 bg-card/90 shadow-sm">
-      <CardContent
-        class="flex min-h-[620px] flex-col items-center justify-center px-4 py-8 text-center sm:min-h-[680px] sm:px-12"
-      >
-        <!-- Hero logo -->
-        <img
-          v-if="!presentation && app_logo"
-          :src="app_logo"
-          :alt="app_name ?? 'Logo'"
-          class="form-flow-default-splash-logo mb-4 w-auto object-contain drop-shadow-lg animate-fade-in"
-        />
+    <Head :title="pageTitle" />
 
-        <p
-          v-if="defaultSplashHeading"
-          class="mb-7 text-base font-semibold tracking-wide text-foreground/80 animate-fade-in-delay sm:text-lg"
+    <!-- ============================================================ -->
+    <!-- Default Splash: modal-style launch screen                    -->
+    <!-- ============================================================ -->
+    <div
+      v-if="is_default_splash"
+      class="x-claim-canvas min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-5 py-8 select-none"
+    >
+      <Card :data-flow-content="isArtworkSplash ? undefined : ''" class="mx-auto w-full max-w-4xl border-0 bg-card/90 shadow-sm">
+        <CardContent
+          class="flex min-h-[620px] flex-col items-center justify-center px-4 py-8 text-center sm:min-h-[680px] sm:px-12"
         >
-          {{ defaultSplashHeading }}
-        </p>
+          <!-- Hero logo -->
+          <img
+            v-if="!presentation && app_logo"
+            :src="app_logo"
+            :alt="app_name ?? 'Logo'"
+            class="form-flow-default-splash-logo mb-4 w-auto object-contain drop-shadow-lg animate-fade-in"
+          />
 
-        <div
-          v-if="voucher_code"
-          class="mb-10 w-full text-center animate-fade-in-delay"
-        >
           <p
-            class="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-foreground/80"
+            v-if="defaultSplashHeading"
+            class="mb-7 text-base font-semibold tracking-wide text-foreground/80 animate-fade-in-delay sm:text-lg"
           >
-            {{ voucherCodeEyebrow }}
+            {{ defaultSplashHeading }}
           </p>
 
           <div
-            data-testid="form-flow-splash-pay-code"
-            class="@container flex w-full items-center justify-center"
+            v-if="voucher_code"
+            class="mb-10 w-full text-center animate-fade-in-delay"
           >
-            <span
-              :style="voucherCodeDisplayStyle"
-              class="max-w-full whitespace-nowrap font-mono font-black uppercase leading-none text-primary"
-            >{{ `|| ${voucher_code} ||` }}</span>
-          </div>
-        </div>
-
-        <div class="w-full max-w-xs space-y-3">
-          <div v-if="timeoutSeconds > 0" class="space-y-1">
-            <div class="h-1 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                class="h-full rounded-full bg-primary/50 transition-all duration-1000 ease-linear"
-                :style="{ width: `${progressPercentage}%` }"
-              />
-            </div>
-
-            <p class="text-center text-[11px] font-medium text-foreground/75">
-              {{ remainingSeconds }}s
+            <p
+              class="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em] text-foreground/80"
+            >
+              {{ voucherCodeEyebrow }}
             </p>
+
+            <div
+              data-testid="form-flow-splash-pay-code"
+              class="@container flex w-full items-center justify-center"
+            >
+              <span
+                :style="voucherCodeDisplayStyle"
+                class="max-w-full whitespace-nowrap font-mono font-black uppercase leading-none text-primary"
+                >{{ `|| ${voucher_code} ||` }}</span
+              >
+            </div>
           </div>
-        </div>
 
-        <footer class="mt-6 space-y-0.5 text-center">
+          <div class="w-full max-w-xs space-y-3">
+            <div v-if="timeoutSeconds > 0" class="space-y-1">
+              <div class="h-1 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  class="h-full rounded-full bg-primary/50 transition-all duration-1000 ease-linear"
+                  :style="{ width: `${progressPercentage}%` }"
+                />
+              </div>
+
+              <p class="text-center text-[11px] font-medium text-foreground/75">
+                {{ remainingSeconds }}s
+              </p>
+            </div>
+          </div>
+
+          <footer class="mt-6 space-y-0.5 text-center">
+            <p
+              v-if="app_author"
+              class="text-[10px] font-medium text-foreground/65"
+            >
+              {{ app_author }}
+            </p>
+
+            <p
+              v-if="copyright_text"
+              class="text-[10px] font-medium text-foreground/65"
+            >
+              {{ copyright_text }}
+            </p>
+
+            <FormFlowVersionStrip
+              :show="show_package_versions"
+              :package-versions="package_versions"
+              context="splash"
+            />
+          </footer>
+
+          <FormFlowActions
+            primary-role="continue"
+            secondary-role="back"
+            :action-placement="splashActionPlacement"
+            :processing="submitting"
+            :primary-disabled="submitting"
+            :show-secondary="false"
+            :primary-label="primaryActionLabel"
+            primary-type="button"
+            variant="immersive"
+            @primary="handleContinue"
+          />
+        </CardContent>
+      </Card>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- Custom Splash: Card-based layout for rider->splash content   -->
+    <!-- ============================================================ -->
+    <div
+      v-else
+      class="min-w-0"
+      :style="
+        isArtworkSplash && presentation
+          ? { minHeight: 'calc(100svh - 11rem)', padding: '0' }
+          : undefined
+      "
+      :class="[
+        isArtworkSplash ? 'flex flex-col items-center' : 'x-claim-canvas',
+
+        isArtworkSplash
+          ? ''
+          : isDisburseFlow
+            ? 'min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 via-background to-background p-4'
+            : 'min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4',
+      ]"
+    >
+      <FormFlowArtworkSurface
+        v-if="isArtworkSplash"
+        :artwork-src="splashArtworkSource"
+        class="self-stretch"
+      >
+        <h2 v-if="title" class="text-center text-2xl font-semibold">
+          {{ title }}
+        </h2>
+        <Card :data-flow-content="isArtworkSplash ? undefined : ''"
+          class="w-full max-w-2xl min-w-0 gap-0 border-0 py-0 shadow-sm"
+          data-testid="form-flow-splash-artwork-card"
+        >
+          <CardContent class="min-w-0 p-0">
+            <FormFlowHtmlContent :html="renderedContent" />
+          </CardContent>
+        </Card>
+        <template #footer>
           <p
-            v-if="app_author"
-            class="text-[10px] font-medium text-foreground/65"
+            v-if="timeoutSeconds > 0"
+            class="text-center text-xs text-muted-foreground"
+            role="status"
           >
-            {{ app_author }}
+            {{ remainingSeconds }}s
           </p>
-
-          <p
-            v-if="copyright_text"
-            class="text-[10px] font-medium text-foreground/65"
-          >
-            {{ copyright_text }}
-          </p>
-
           <FormFlowVersionStrip
             :show="show_package_versions"
             :package-versions="package_versions"
             context="splash"
           />
-        </footer>
+          <FormFlowActions
+            primary-role="continue"
+            secondary-role="back"
+            :action-placement="splashActionPlacement"
+            :processing="submitting"
+            :primary-disabled="submitting"
+            :show-secondary="false"
+            :primary-label="primaryActionLabel"
+            primary-type="button"
+            :variant="isDisburseFlow ? 'immersive' : 'default'"
+            @primary="handleContinue"
+          />
+        </template>
+      </FormFlowArtworkSurface>
+      <Card :data-flow-content="isArtworkSplash ? undefined : ''"
+        v-else
+        :class="
+          isDisburseFlow
+            ? 'min-w-0 w-full max-w-2xl overflow-visible border-0 shadow-sm bg-card/80'
+            : 'min-w-0 w-full max-w-2xl overflow-visible'
+        "
+      >
+        <CardHeader v-if="title">
+          <CardTitle class="text-center text-2xl">{{ title }}</CardTitle>
+        </CardHeader>
 
-        <FormFlowActions
-          :action-placement="splashActionPlacement"
-          :processing="submitting"
-          :primary-disabled="submitting"
-          :show-secondary="false"
-          :primary-label="primaryActionLabel"
-          primary-type="button"
-          variant="immersive"
-          @primary="handleContinue"
-        />
-      </CardContent>
-    </Card>
-  </div>
-
-  <!-- ============================================================ -->
-  <!-- Custom Splash: Card-based layout for rider->splash content   -->
-  <!-- ============================================================ -->
-  <div
-    v-else
-    class="min-w-0"
-    :style="isArtworkSplash && presentation ? { minHeight: 'calc(100svh - 11rem)', padding: '0' } : undefined"
-    :class="[isArtworkSplash ? 'flex flex-col items-center' : 'x-claim-canvas',
-
-      isArtworkSplash ? '' : isDisburseFlow
-        ? 'min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 via-background to-background p-4'
-        : 'min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4'
-    ]"
-  >
-    <FormFlowArtworkSurface v-if="isArtworkSplash" :artwork-src="splashArtworkSource" class="self-stretch">
-      <h2 v-if="title" class="text-center text-2xl font-semibold">{{ title }}</h2>
-      <Card class="w-full max-w-2xl min-w-0 gap-0 border-0 py-0 shadow-sm" data-testid="form-flow-splash-artwork-card">
-        <CardContent class="min-w-0 p-0">
-          <FormFlowHtmlContent :html="renderedContent" />
-        </CardContent>
-      </Card>
-      <template #footer>
-      <p v-if="timeoutSeconds > 0" class="text-center text-xs text-muted-foreground" role="status">{{ remainingSeconds }}s</p>
-      <FormFlowVersionStrip :show="show_package_versions" :package-versions="package_versions" context="splash" />
-      <FormFlowActions
-        :action-placement="splashActionPlacement"
-        :processing="submitting"
-        :primary-disabled="submitting"
-        :show-secondary="false"
-        :primary-label="primaryActionLabel"
-        primary-type="button"
-        :variant="isDisburseFlow ? 'immersive' : 'default'"
-        @primary="handleContinue"
-      />
-      </template>
-    </FormFlowArtworkSurface>
-    <Card
-      v-else
-      :class="
-        isDisburseFlow
-          ? 'min-w-0 w-full max-w-2xl overflow-visible border-0 shadow-sm bg-card/80'
-          : 'min-w-0 w-full max-w-2xl overflow-visible'
-      "
-    >
-      <CardHeader v-if="title">
-        <CardTitle class="text-center text-2xl">{{ title }}</CardTitle>
-      </CardHeader>
-
-      <CardContent class="min-w-0 space-y-6 overflow-visible">
-        <!-- Rendered content -->
-        <FormFlowHtmlContent
-          v-if="contentType === 'html' || contentType === 'svg'"
-          :html="renderedContent"
-        />
-        <div
-          v-else-if="contentType !== 'text'"
-          v-html="renderedContent"
-          class="prose prose-base max-w-none dark:prose-invert text-center overflow-visible"
-        />
-        <div
-          v-else
-          class="text-center text-lg text-gray-700 dark:text-gray-300 whitespace-pre-wrap"
-        >
-          {{ content }}
-        </div>
-
-        <!-- Countdown progress -->
-        <div v-if="timeoutSeconds > 0" class="space-y-2">
+        <CardContent class="min-w-0 space-y-6 overflow-visible">
+          <!-- Rendered content -->
+          <FormFlowHtmlContent
+            v-if="contentType === 'html' || contentType === 'svg'"
+            :html="renderedContent"
+          />
           <div
-            :class="
-              isDisburseFlow
-                ? 'w-full bg-muted rounded-full h-1 overflow-hidden'
-                : 'w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden'
-            "
+            v-else-if="contentType !== 'text'"
+            v-html="renderedContent"
+            class="prose prose-base max-w-none dark:prose-invert text-center overflow-visible"
+          />
+          <div
+            v-else
+            class="text-center text-lg text-gray-700 dark:text-gray-300 whitespace-pre-wrap"
           >
+            {{ content }}
+          </div>
+
+          <!-- Countdown progress -->
+          <div v-if="timeoutSeconds > 0" class="space-y-2">
             <div
               :class="
                 isDisburseFlow
-                  ? 'h-full rounded-full bg-primary/50 transition-all duration-1000 ease-linear'
-                  : 'bg-primary h-full transition-all duration-1000 ease-linear'
+                  ? 'w-full bg-muted rounded-full h-1 overflow-hidden'
+                  : 'w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden'
               "
-              :style="{ width: `${progressPercentage}%` }"
-            />
-          </div>
-          <p
-            :class="
-              isDisburseFlow
-                ? 'text-center text-[11px] text-muted-foreground'
-                : 'text-center text-sm text-gray-500 dark:text-gray-400'
-            "
-          >
-            <template v-if="isDisburseFlow">{{ remainingSeconds }}s</template>
-            <template v-else
-              >Continuing in {{ remainingSeconds }} second{{
-                remainingSeconds !== 1 ? "s" : ""
-              }}…</template
             >
-          </p>
-        </div>
+              <div
+                :class="
+                  isDisburseFlow
+                    ? 'h-full rounded-full bg-primary/50 transition-all duration-1000 ease-linear'
+                    : 'bg-primary h-full transition-all duration-1000 ease-linear'
+                "
+                :style="{ width: `${progressPercentage}%` }"
+              />
+            </div>
+            <p
+              :class="
+                isDisburseFlow
+                  ? 'text-center text-[11px] text-muted-foreground'
+                  : 'text-center text-sm text-gray-500 dark:text-gray-400'
+              "
+            >
+              <template v-if="isDisburseFlow">{{ remainingSeconds }}s</template>
+              <template v-else
+                >Continuing in {{ remainingSeconds }} second{{
+                  remainingSeconds !== 1 ? "s" : ""
+                }}…</template
+              >
+            </p>
+          </div>
 
-        <!-- Continue button -->
-        <FormFlowVersionStrip
-          :show="show_package_versions"
-          :package-versions="package_versions"
-          context="splash"
-        />
+          <!-- Continue button -->
+          <FormFlowVersionStrip
+            :show="show_package_versions"
+            :package-versions="package_versions"
+            context="splash"
+          />
 
-        <FormFlowActions
-          :action-placement="splashActionPlacement"
-          :processing="submitting"
-          :primary-disabled="submitting"
-          :show-secondary="false"
-          :primary-label="primaryActionLabel"
-          primary-type="button"
-          :variant="isDisburseFlow ? 'immersive' : 'default'"
-          @primary="handleContinue"
-        />
-      </CardContent>
-    </Card>
-  </div>
-
+          <FormFlowActions
+            primary-role="continue"
+            secondary-role="back"
+            :action-placement="splashActionPlacement"
+            :processing="submitting"
+            :primary-disabled="submitting"
+            :show-secondary="false"
+            :primary-label="primaryActionLabel"
+            primary-type="button"
+            :variant="isDisburseFlow ? 'immersive' : 'default'"
+            @primary="handleContinue"
+          />
+        </CardContent>
+      </Card>
+    </div>
   </FormFlowPresentation>
 </template>
 
@@ -553,7 +601,6 @@ if (import.meta.env.DEV && props.claim_experience) {
     max-height: 4.5rem;
   }
 }
-
 
 /* Prose overrides for custom splash content */
 .prose :deep(img) {

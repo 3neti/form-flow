@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FormFlowNotice from "@/pages/form-flow/core/components/FormFlowNotice.vue";
 import FormFlowPresentation from "./components/FormFlowPresentation.vue";
 import type { FormFlowPresentation as PresentationPolicy } from "./components/formFlowPresentation";
 import { ref, computed, watch, onMounted, nextTick } from "vue";
@@ -714,7 +715,9 @@ function formatBadgeValue(field?: FieldDefinition): string {
 }
 
 function normalizeMobileForAccount(value: unknown): string {
-  const raw = String(value ?? "").trim().replace(/\s+/g, "");
+  const raw = String(value ?? "")
+    .trim()
+    .replace(/\s+/g, "");
 
   if (raw.startsWith("+63")) {
     return `0${raw.slice(3)}`;
@@ -747,7 +750,11 @@ function fieldStateClass(field: FieldDefinition): string {
     return "border-destructive bg-destructive/5";
   }
 
-  if (field.required && isPayoutAttentionField(field) && !fieldHasValue(field)) {
+  if (
+    field.required &&
+    isPayoutAttentionField(field) &&
+    !fieldHasValue(field)
+  ) {
     return "border-amber-300 bg-amber-50/40 ring-1 ring-amber-200/70";
   }
 
@@ -775,9 +782,16 @@ function clearAccountNumber(): void {
 }
 
 const payoutRouteDetails = computed(() => {
-  const labels = ["Amount", "Payment method", "Bank / wallet", "Account number"].slice(-payoutRouteSegmentsList.value.length);
+  const labels = [
+    "Amount",
+    "Payment method",
+    "Bank / wallet",
+    "Account number",
+  ].slice(-payoutRouteSegmentsList.value.length);
   return payoutRouteSegmentsList.value.map((value, index) => ({
-    label: labels[index], value, icon: payoutRouteIconsList.value[index],
+    label: labels[index],
+    value,
+    icon: payoutRouteIconsList.value[index],
   }));
 });
 
@@ -863,592 +877,296 @@ if (import.meta.env.DEV && props.claim_experience) {
 </script>
 
 <template>
-  <FormFlowPresentation :presentation="presentation">
-  <Head :title="pageTitle" />
+  <FormFlowPresentation
+    :presentation="presentation"
+    :screen="presentation?.screen ?? 'form'"
+  >
+    <Head :title="pageTitle" />
 
-  <div :class="screenClass" :data-form-flow-ui-variant="uiVariant">
-    <!-- Error Alert -->
-    <Alert
-      v-if="apiError"
-      variant="destructive"
-      class="mb-6"
-      :class="alertClass"
-    >
-      <AlertCircle class="h-4 w-4" />
-      <AlertDescription>
-        {{ apiError }}
-      </AlertDescription>
-    </Alert>
+    <div :class="screenClass" :data-form-flow-ui-variant="uiVariant">
+      <!-- Error Alert -->
+      <FormFlowNotice
+        v-if="apiError"
+        class="mb-6"
+        :class="alertClass"
+        role="error"
+      >
+        <AlertDescription>
+          {{ apiError }}
+        </AlertDescription>
+      </FormFlowNotice>
 
-    <!-- Form Card -->
-    <FormFlowVersionStrip
-      v-if="presentation"
-      :show="props.show_package_versions"
-      :package-versions="props.package_versions"
-      :context="props.package_version_context"
-    />
-    <Card :class="cardClass">
-      <CardHeader :class="cardHeaderClass">
-        <div
-          v-if="!presentation && (props.app_logo || props.app_name)"
-          class="mb-3 flex items-center gap-3"
-        >
-          <img
-            v-if="props.app_logo"
-            :src="props.app_logo"
-            :alt="props.app_name ?? 'Logo'"
-            class="h-9 max-h-9 w-auto max-w-28 object-contain"
-          />
-          <p
-            v-if="props.app_name"
-            class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
-          >
-            {{ props.app_name }}
-          </p>
-        </div>
-        <CardTitle class="text-lg sm:text-xl">{{ title }}</CardTitle>
-      </CardHeader>
-      <CardContent :class="cardContentClass">
-        <form @submit.prevent="handleSubmit" :class="formClass">
-          <!-- Hidden fields (not visible but needed for auto-sync conditions) -->
-          <input
-            v-for="field in props.fields.filter((f) => f.type === 'hidden')"
-            :key="field.name"
-            type="hidden"
-            :name="field.name"
-            v-model="formData[field.name]"
-          />
-
+      <!-- Form Card -->
+      <FormFlowVersionStrip
+        v-if="presentation"
+        :show="props.show_package_versions"
+        :package-versions="props.package_versions"
+        :context="props.package_version_context"
+      />
+      <Card data-flow-content :class="cardClass">
+        <CardHeader :class="cardHeaderClass">
           <div
-            v-if="claimWorkflow && (!presentation || claimWorkflowReview.length > 0)"
-            class="rounded-lg border border-primary/15 bg-primary/5 p-3"
-            data-testid="form-flow-claim-workflow-panel"
+            v-if="!presentation && (props.app_logo || props.app_name)"
+            class="mb-3 flex items-center gap-3"
           >
-            <div class="space-y-1">
-              <p class="text-sm font-semibold text-foreground">
-                {{ claimWorkflow.title || title }}
-              </p>
-              <p
-                v-if="claimWorkflow.description"
-                class="text-sm text-muted-foreground"
-              >
-                {{ claimWorkflow.description }}
-              </p>
-              <p
-                v-if="claimWorkflowSummary"
-                class="text-sm text-muted-foreground"
-              >
-                {{ claimWorkflowSummary }}
-              </p>
-            </div>
-
-            <dl
-              v-if="claimWorkflowReview.length > 0"
-              class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2"
-            >
-              <div
-                v-for="item in claimWorkflowReview"
-                :key="item.label"
-                class="rounded-md border border-border/70 bg-background/80 px-3 py-2"
-              >
-                <dt
-                  class="text-xs uppercase tracking-wide text-muted-foreground"
-                >
-                  {{ item.label }}
-                </dt>
-                <dd
-                  class="mt-1 break-words text-sm font-semibold text-foreground"
-                >
-                  {{ item.value }}
-                </dd>
-              </div>
-            </dl>
-          </div>
-
-          <!-- Summary Badges Section -->
-          <div
-            v-if="summaryFields.length > 0"
-            class="mb-3 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3"
-          >
-            <div
-              v-for="field in summaryFields"
-              :key="field.name"
-              class="flex flex-col"
-            >
-              <span class="text-xs text-muted-foreground mb-1">{{
-                getFieldLabel(field)
-              }}</span>
-              <Badge
-                variant="secondary"
-                class="text-base py-2 px-4 justify-start w-full"
-              >
-                <span class="font-bold">{{ formatBadgeValue(field) }}</span>
-              </Badge>
-            </div>
-          </div>
-
-          <!-- Open-mode: editable amount input with numpad -->
-          <fieldset
-            v-if="isOpenSlice"
-            class="border rounded-lg px-3 pt-1 pb-3 bg-muted/5"
-          >
-            <legend class="text-sm font-medium text-muted-foreground px-2">
-              Withdrawal Amount
-            </legend>
-            <NumberInputWithKeypad
-              v-model="formData['amount']"
-              prefix="₱"
-              :min="sliceMinWithdrawal"
-              :max="sliceAvailableBalance"
-              :allow-decimal="true"
-              keypad-mode="amount"
-              keypad-title="Withdrawal Amount"
-              hero
+            <img
+              v-if="props.app_logo"
+              :src="props.app_logo"
+              :alt="props.app_name ?? 'Logo'"
+              class="h-9 max-h-9 w-auto max-w-28 object-contain"
             />
-            <div
-              class="flex flex-wrap items-center justify-center gap-1.5 mt-1"
-            >
-              <Badge variant="outline" class="px-2 py-0.5 text-xs font-medium">
-                {{ formatCurrency(sliceMinWithdrawal) }} –
-                {{ formatCurrency(sliceAvailableBalance) }}
-              </Badge>
-              <span class="text-muted-foreground text-xs">•</span>
-              <Badge variant="outline" class="px-2 py-0.5 text-xs font-medium">
-                Up to {{ sliceMaxSlices }} withdrawals
-              </Badge>
-            </div>
             <p
-              v-if="errors['amount']"
-              class="text-sm text-destructive text-center mt-1"
+              v-if="props.app_name"
+              class="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
             >
-              {{ errors["amount"] }}
-            </p>
-          </fieldset>
-
-          <!-- Fixed-mode: show slice info badge -->
-          <div
-            v-else-if="isFixedSlice && sliceMaxSlices > 0"
-            class="text-center"
-          >
-            <Badge variant="secondary" class="text-base py-2 px-4">
-              <span class="font-bold">{{ formatBadgeValue(amountField) }}</span>
-            </Badge>
-            <p class="text-xs text-muted-foreground mt-1">
-              Slice 1 of {{ sliceMaxSlices }}
+              {{ props.app_name }}
             </p>
           </div>
-
-          <!-- Hero Fields Section -->
-          <div v-if="heroFields.length > 0" class="mb-4 space-y-4">
-            <div
-              v-for="field in heroFields"
+          <CardTitle class="text-lg sm:text-xl">{{ title }}</CardTitle>
+        </CardHeader>
+        <CardContent :class="cardContentClass">
+          <form @submit.prevent="handleSubmit" :class="formClass">
+            <!-- Hidden fields (not visible but needed for auto-sync conditions) -->
+            <input
+              v-for="field in props.fields.filter((f) => f.type === 'hidden')"
               :key="field.name"
-              class="space-y-3"
+              type="hidden"
+              :name="field.name"
+              v-model="formData[field.name]"
+            />
+
+            <div
+              v-if="
+                claimWorkflow &&
+                (!presentation || claimWorkflowReview.length > 0)
+              "
+              class="rounded-lg border border-primary/15 bg-primary/5 p-3"
+              data-testid="form-flow-claim-workflow-panel"
             >
-              <Label
-                :for="field.name"
-                :class="[
-                  'text-2xl font-bold',
-                  { 'text-destructive': errors[field.name] },
-                ]"
+              <div class="space-y-1">
+                <p class="text-sm font-semibold text-foreground">
+                  {{ claimWorkflow.title || title }}
+                </p>
+                <p
+                  v-if="claimWorkflow.description"
+                  class="text-sm text-muted-foreground"
+                >
+                  {{ claimWorkflow.description }}
+                </p>
+                <p
+                  v-if="claimWorkflowSummary"
+                  class="text-sm text-muted-foreground"
+                >
+                  {{ claimWorkflowSummary }}
+                </p>
+              </div>
+
+              <dl
+                v-if="claimWorkflowReview.length > 0"
+                class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2"
               >
-                {{ getFieldLabel(field) }}
-                <span v-if="field.required" class="text-destructive">*</span>
-              </Label>
+                <div
+                  v-for="item in claimWorkflowReview"
+                  :key="item.label"
+                  class="rounded-md border border-border/70 bg-background/80 px-3 py-2"
+                >
+                  <dt
+                    class="text-xs uppercase tracking-wide text-muted-foreground"
+                  >
+                    {{ item.label }}
+                  </dt>
+                  <dd
+                    class="mt-1 break-words text-sm font-semibold text-foreground"
+                  >
+                    {{ item.value }}
+                  </dd>
+                </div>
+              </dl>
+            </div>
 
-              <!-- Hero field input with larger styling -->
-              <Input
-                v-if="field.type === 'text' || field.type === 'email'"
-                :id="field.name"
-                v-model="formData[field.name]"
-                :type="field.type"
-                :placeholder="getFieldPlaceholder(field)"
-                :required="field.required"
-                :readonly="field.readonly"
-                :disabled="field.disabled"
-                :class="[
-                  'py-4 text-lg ring-2 ring-primary/20 focus-visible:ring-4 focus-visible:ring-primary/30 transition-all',
-                  {
-                    'border-destructive ring-destructive/20':
-                      errors[field.name],
-                  },
-                ]"
-                autofocus
-              />
-
-              <!-- Hero phone input -->
-              <PhoneInput
-                v-else-if="field.type === 'tel'"
-                v-model="formData[field.name]"
-                :error="errors[field.name]"
-                :placeholder="field.placeholder || ''"
-                :required="field.required"
-                :readonly="field.readonly"
-                :disabled="field.disabled"
-                autofocus
-              />
-
-              <!-- Transaction badges below mobile field (hide amount badge for open-mode since it has its own input) -->
+            <!-- Summary Badges Section -->
+            <div
+              v-if="summaryFields.length > 0"
+              class="mb-3 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3"
+            >
               <div
-                v-if="field.name === 'mobile' && issuerName"
-                class="flex flex-wrap items-center gap-1.5 mt-2"
+                v-for="field in summaryFields"
+                :key="field.name"
+                class="flex flex-col"
+              >
+                <span class="text-xs text-muted-foreground mb-1">{{
+                  getFieldLabel(field)
+                }}</span>
+                <Badge
+                  variant="secondary"
+                  class="text-base py-2 px-4 justify-start w-full"
+                >
+                  <span class="font-bold">{{ formatBadgeValue(field) }}</span>
+                </Badge>
+              </div>
+            </div>
+
+            <!-- Open-mode: editable amount input with numpad -->
+            <fieldset
+              v-if="isOpenSlice"
+              class="border rounded-lg px-3 pt-1 pb-3 bg-muted/5"
+            >
+              <legend class="text-sm font-medium text-muted-foreground px-2">
+                Withdrawal Amount
+              </legend>
+              <NumberInputWithKeypad
+                v-model="formData['amount']"
+                prefix="₱"
+                :min="sliceMinWithdrawal"
+                :max="sliceAvailableBalance"
+                :allow-decimal="true"
+                keypad-mode="amount"
+                keypad-title="Withdrawal Amount"
+                hero
+              />
+              <div
+                class="flex flex-wrap items-center justify-center gap-1.5 mt-1"
               >
                 <Badge
                   variant="outline"
                   class="px-2 py-0.5 text-xs font-medium"
                 >
-                  {{ issuerName }}
+                  {{ formatCurrency(sliceMinWithdrawal) }} –
+                  {{ formatCurrency(sliceAvailableBalance) }}
                 </Badge>
-                <template v-if="!isOpenSlice">
-                  <span class="text-muted-foreground text-xs">•</span>
+                <span class="text-muted-foreground text-xs">•</span>
+                <Badge
+                  variant="outline"
+                  class="px-2 py-0.5 text-xs font-medium"
+                >
+                  Up to {{ sliceMaxSlices }} withdrawals
+                </Badge>
+              </div>
+              <p
+                v-if="errors['amount']"
+                class="text-sm text-destructive text-center mt-1"
+              >
+                {{ errors["amount"] }}
+              </p>
+            </fieldset>
+
+            <!-- Fixed-mode: show slice info badge -->
+            <div
+              v-else-if="isFixedSlice && sliceMaxSlices > 0"
+              class="text-center"
+            >
+              <Badge variant="secondary" class="text-base py-2 px-4">
+                <span class="font-bold">{{
+                  formatBadgeValue(amountField)
+                }}</span>
+              </Badge>
+              <p class="text-xs text-muted-foreground mt-1">
+                Slice 1 of {{ sliceMaxSlices }}
+              </p>
+            </div>
+
+            <!-- Hero Fields Section -->
+            <div v-if="heroFields.length > 0" class="mb-4 space-y-4">
+              <div
+                v-for="field in heroFields"
+                :key="field.name"
+                class="space-y-3"
+              >
+                <Label
+                  :for="field.name"
+                  :class="[
+                    'text-2xl font-bold',
+                    { 'text-destructive': errors[field.name] },
+                  ]"
+                >
+                  {{ getFieldLabel(field) }}
+                  <span v-if="field.required" class="text-destructive">*</span>
+                </Label>
+
+                <!-- Hero field input with larger styling -->
+                <Input
+                  v-if="field.type === 'text' || field.type === 'email'"
+                  :id="field.name"
+                  v-model="formData[field.name]"
+                  :type="field.type"
+                  :placeholder="getFieldPlaceholder(field)"
+                  :required="field.required"
+                  :readonly="field.readonly"
+                  :disabled="field.disabled"
+                  :class="[
+                    'py-4 text-lg ring-2 ring-primary/20 focus-visible:ring-4 focus-visible:ring-primary/30 transition-all',
+                    {
+                      'border-destructive ring-destructive/20':
+                        errors[field.name],
+                    },
+                  ]"
+                  autofocus
+                />
+
+                <!-- Hero phone input -->
+                <PhoneInput
+                  v-else-if="field.type === 'tel'"
+                  v-model="formData[field.name]"
+                  :error="errors[field.name]"
+                  :placeholder="field.placeholder || ''"
+                  :required="field.required"
+                  :readonly="field.readonly"
+                  :disabled="field.disabled"
+                  autofocus
+                />
+
+                <!-- Transaction badges below mobile field (hide amount badge for open-mode since it has its own input) -->
+                <div
+                  v-if="field.name === 'mobile' && issuerName"
+                  class="flex flex-wrap items-center gap-1.5 mt-2"
+                >
                   <Badge
                     variant="outline"
                     class="px-2 py-0.5 text-xs font-medium"
                   >
-                    {{
-                      formatBadgeValue(
-                        props.fields.find((f) => f.name === "amount"),
-                      )
-                    }}
+                    {{ issuerName }}
                   </Badge>
-                </template>
-              </div>
-
-              <!-- Help text (hide for mobile field since badges replace it) -->
-              <p
-                v-if="field.help_text && field.name !== 'mobile'"
-                class="text-sm text-muted-foreground"
-              >
-                {{ field.help_text }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Separator before grouped/normal fields (when hero fields present) -->
-          <div
-            v-if="
-              heroFields.length > 0 &&
-              (Object.keys(groupedFields).length > 0 || normalFields.length > 0)
-            "
-            class="relative my-4"
-          >
-            <Separator />
-            <div
-              v-if="voucherCode"
-              class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2"
-            >
-              <span
-                class="inline-flex items-center gap-1.5 px-3 py-0.5 text-sm font-mono font-semibold tracking-widest text-primary bg-primary/5 border border-primary/20 rounded-full"
-              >
-                <span class="text-primary/40" aria-hidden="true">||</span>
-                {{ voucherCode }}
-                <span class="text-primary/40" aria-hidden="true">||</span>
-              </span>
-            </div>
-          </div>
-
-          <!-- Grouped Fields Sections (with voucher code separator between first and remaining groups) -->
-          <template
-            v-for="(groupFields, groupName, groupIndex) in groupedFields"
-            :key="groupName"
-          >
-            <div class="space-y-3">
-              <fieldset class="min-w-0 rounded-lg border bg-muted/5 p-0" data-testid="form-flow-field-group">
-                <legend class="mx-2 px-2 text-sm font-medium text-muted-foreground">
-                  {{
-                    groupName
-                      .replace("_", " ")
-                      .replace(/\b\w/g, (l) => l.toUpperCase())
-                  }}
-                </legend>
-
-                <div class="min-w-0 space-y-3 px-4 py-3" data-testid="form-flow-field-group-content">
-                  <div
-                    v-for="field in groupFields"
-                    :key="field.name"
-                    class="min-w-0 w-full space-y-2"
-                  >
-                    <!-- Render field with standard template below -->
-                    <template
-                      v-if="
-                        field.type === 'text' ||
-                        field.type === 'email' ||
-                        field.type === 'date' ||
-                        field.type === 'number'
-                      "
+                  <template v-if="!isOpenSlice">
+                    <span class="text-muted-foreground text-xs">•</span>
+                    <Badge
+                      variant="outline"
+                      class="px-2 py-0.5 text-xs font-medium"
                     >
-                      <Label
-                        :for="field.name"
-                        :class="[
-                          field.name === 'account_number'
-                            ? compactPayoutLabelClass
-                            : '',
-                          { 'text-destructive': errors[field.name] },
-                        ]"
-                      >
-                        {{ getFieldLabel(field) }}
-                        <span v-if="field.required" class="text-destructive"
-                          >*</span
-                        >
-                      </Label>
-                      <Input
-                        :id="field.name"
-                        v-model="formData[field.name]"
-                        :type="field.type"
-                        :placeholder="getFieldPlaceholder(field)"
-                        :required="field.required"
-                        :min="field.min"
-                        :max="field.max"
-                        :step="field.step"
-                        :readonly="field.readonly"
-                        :disabled="field.disabled"
-                        :inputmode="
-                          field.name === 'account_number' ? 'numeric' : undefined
-                        "
-                        :autocomplete="
-                          field.name === 'account_number' ? 'off' : undefined
-                        "
-                        :class="[
-                          { 'border-destructive': errors[field.name] },
-                          field.name === 'account_number'
-                            ? accountNumberInputClass
-                            : '',
-                          fieldStateClass(field),
-                        ]"
-                      />
-                      <div
-                        v-if="field.name === 'account_number'"
-                        class="flex flex-wrap items-center gap-2"
-                      >
-                        <button
-                          v-if="canUseClaimMobileForAccount"
-                          type="button"
-                          class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800 transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                          @click="copyClaimMobileToAccount"
-                        >
-                          Use claim mobile
-                        </button>
-                        <span
-                          v-else-if="accountUsesClaimMobile"
-                          class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
-                        >
-                          Using claim mobile
-                        </span>
-                        <button
-                          v-if="selectedAccountNumber"
-                          type="button"
-                          class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-                          @click="clearAccountNumber"
-                        >
-                          Clear
-                        </button>
-                        <details
-                          v-if="field.help_text"
-                          class="relative text-xs text-slate-500"
-                        >
-                          <summary
-                            class="flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-full border border-slate-200 bg-white font-semibold text-slate-500"
-                            aria-label="Account number help"
-                          >
-                            ?
-                          </summary>
-                          <p
-                            class="absolute left-0 z-10 mt-2 w-60 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-snug text-slate-600 shadow-lg"
-                          >
-                            {{ field.help_text }}
-                          </p>
-                        </details>
-                      </div>
-                      <p
-                        v-if="field.help_text && field.name !== 'account_number'"
-                        class="text-xs text-muted-foreground"
-                      >
-                        {{ field.help_text }}
-                      </p>
-                      <p
-                        v-if="errors[field.name]"
-                        class="text-sm text-destructive"
-                      >
-                        {{ errors[field.name] }}
-                      </p>
-                    </template>
-
-                    <!-- Phone Input -->
-                    <template v-else-if="field.type === 'tel'">
-                      <Label
-                        :for="field.name"
-                        :class="{ 'text-destructive': errors[field.name] }"
-                      >
-                        {{ getFieldLabel(field) }}
-                        <span v-if="field.required" class="text-destructive"
-                          >*</span
-                        >
-                      </Label>
-                      <div :class="fieldShellClass(field)">
-                        <PhoneInput
-                          v-model="formData[field.name]"
-                          :error="errors[field.name]"
-                          :placeholder="field.placeholder || ''"
-                          :required="field.required"
-                          :readonly="field.readonly"
-                          :disabled="field.disabled"
-                        />
-                      </div>
-                      <!-- Transaction badges below mobile field (hide amount badge for open-mode) -->
-                      <div
-                        v-if="field.name === 'mobile' && issuerName"
-                        class="flex flex-wrap items-center gap-1.5 mt-1"
-                      >
-                        <Badge
-                          variant="outline"
-                          class="px-2 py-0.5 text-xs font-medium"
-                        >
-                          {{ issuerName }}
-                        </Badge>
-                        <template v-if="!isOpenSlice">
-                          <span class="text-muted-foreground text-xs">•</span>
-                          <Badge
-                            variant="outline"
-                            class="px-2 py-0.5 text-xs font-medium"
-                          >
-                            {{
-                              formatBadgeValue(
-                                props.fields.find((f) => f.name === "amount"),
-                              )
-                            }}
-                          </Badge>
-                        </template>
-                      </div>
-                      <p
-                        v-if="field.help_text && field.name !== 'mobile'"
-                        class="text-xs text-muted-foreground"
-                      >
-                        {{ field.help_text }}
-                      </p>
-                    </template>
-
-                    <!-- Bank Account (BankEMISelect) -->
-                    <template v-else-if="field.type === 'bank_account'">
-                      <Label
-                        :for="field.name"
-                        :class="[
-                          compactPayoutLabelClass,
-                          { 'text-destructive': errors[field.name] },
-                        ]"
-                      >
-                        {{ getFieldLabel(field) }}
-                        <span v-if="field.required" class="text-destructive"
-                          >*</span
-                        >
-                      </Label>
-                      <div :class="fieldShellClass(field)">
-                        <BankEMISelect
-                          v-model="formData[field.name]"
-                          :settlement-rail="activeSettlementRail"
-                          :institutions="field.institution_options ?? []"
-                          :disabled="field.disabled || field.readonly"
-                        />
-                      </div>
-                      <p
-                        v-if="field.help_text"
-                        class="sr-only"
-                      >
-                        {{ field.help_text }}
-                      </p>
-                      <p
-                        v-if="errors[field.name]"
-                        class="text-sm text-destructive"
-                      >
-                        {{ errors[field.name] }}
-                      </p>
-                    </template>
-
-                    <!-- Settlement Rail -->
-                    <template v-else-if="field.type === 'settlement_rail'">
-                      <Label
-                        :for="field.name"
-                        :class="[
-                          compactPayoutLabelClass,
-                          { 'text-destructive': errors[field.name] },
-                        ]"
-                      >
-                        {{ getFieldLabel(field) }}
-                        <span v-if="field.required" class="text-destructive"
-                          >*</span
-                        >
-                      </Label>
-                      <div :class="fieldShellClass(field)">
-                        <SettlementRailSelect
-                          v-model="formData[field.name]"
-                          :amount="formData.amount || 0"
-                          :bank-code="selectedBankCode || null"
-                          :disabled="field.disabled || field.readonly"
-                        />
-                      </div>
-                      <p
-                        v-if="field.help_text"
-                        class="text-xs text-muted-foreground"
-                      >
-                        {{ field.help_text }}
-                      </p>
-                      <p
-                        v-if="errors[field.name]"
-                        class="text-sm text-destructive"
-                      >
-                        {{ errors[field.name] }}
-                      </p>
-                    </template>
-
-                    <!-- Recipient Country -->
-                    <template v-else-if="field.type === 'recipient_country'">
-                      <Label
-                        :for="field.name"
-                        :class="{ 'text-destructive': errors[field.name] }"
-                      >
-                        {{ getFieldLabel(field) }}
-                        <span v-if="field.required" class="text-destructive"
-                          >*</span
-                        >
-                      </Label>
-                      <CountrySelect
-                        v-model="formData[field.name]"
-                        :disabled="field.disabled || field.readonly"
-                      />
-                      <p
-                        v-if="field.help_text"
-                        class="text-xs text-muted-foreground"
-                      >
-                        {{ field.help_text }}
-                      </p>
-                      <p
-                        v-if="errors[field.name]"
-                        class="text-sm text-destructive"
-                      >
-                        {{ errors[field.name] }}
-                      </p>
-                    </template>
-                  </div>
+                      {{
+                        formatBadgeValue(
+                          props.fields.find((f) => f.name === "amount"),
+                        )
+                      }}
+                    </Badge>
+                  </template>
                 </div>
-              </fieldset>
+
+                <!-- Help text (hide for mobile field since badges replace it) -->
+                <p
+                  v-if="field.help_text && field.name !== 'mobile'"
+                  class="text-sm text-muted-foreground"
+                >
+                  {{ field.help_text }}
+                </p>
+              </div>
             </div>
 
-            <!-- Voucher code separator between first and remaining groups -->
+            <!-- Separator before grouped/normal fields (when hero fields present) -->
             <div
               v-if="
-                groupIndex === 0 &&
-                Object.keys(groupedFields).length > 1 &&
-                voucherCode &&
-                heroFields.length === 0
+                heroFields.length > 0 &&
+                (Object.keys(groupedFields).length > 0 ||
+                  normalFields.length > 0)
               "
               class="relative my-4"
             >
               <Separator />
-
               <div
-                class="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center bg-background/0 px-2"
+                v-if="voucherCode"
+                class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2"
               >
                 <span
-                  class="inline-flex items-center justify-center gap-1.5 rounded-full border border-primary/20 bg-background px-3 py-0.5 text-sm font-mono font-semibold tracking-widest text-primary"
+                  class="inline-flex items-center gap-1.5 px-3 py-0.5 text-sm font-mono font-semibold tracking-widest text-primary bg-primary/5 border border-primary/20 rounded-full"
                 >
                   <span class="text-primary/40" aria-hidden="true">||</span>
                   {{ voucherCode }}
@@ -1456,394 +1174,759 @@ if (import.meta.env.DEV && props.claim_experience) {
                 </span>
               </div>
             </div>
-          </template>
 
-          <!-- Normal Fields (non-grouped, non-hero, non-badge) -->
-          <div v-if="normalFields.length > 0" class="space-y-3">
-            <div
-              v-for="field in normalFields"
-              :key="field.name"
-              class="space-y-2"
+            <!-- Grouped Fields Sections (with voucher code separator between first and remaining groups) -->
+            <template
+              v-for="(groupFields, groupName, groupIndex) in groupedFields"
+              :key="groupName"
             >
-              <!-- Text Input -->
-              <div
-                v-if="
-                  field.type === 'text' ||
-                  field.type === 'email' ||
-                  field.type === 'date' ||
-                  field.type === 'number'
-                "
-              >
-                <Label
-                  :for="field.name"
-                  :class="[
-                    field.name === 'account_number'
-                      ? compactPayoutLabelClass
-                      : '',
-                    { 'text-destructive': errors[field.name] },
-                  ]"
+              <div class="space-y-3">
+                <fieldset
+                  class="min-w-0 rounded-lg border bg-muted/5 p-0"
+                  data-testid="form-flow-field-group"
                 >
-                  {{ getFieldLabel(field) }}
-                  <span v-if="field.required" class="text-destructive">*</span>
-                </Label>
-                <Input
-                  :id="field.name"
-                  v-model="formData[field.name]"
-                  :type="field.type"
-                  :placeholder="getFieldPlaceholder(field)"
-                  :required="field.required"
-                  :min="field.min"
-                  :max="field.max"
-                  :step="field.step"
-                  :readonly="field.readonly"
-                  :disabled="field.disabled"
-                  :inputmode="
-                    field.name === 'account_number' ? 'numeric' : undefined
-                  "
-                  :autocomplete="
-                    field.name === 'account_number' ? 'off' : undefined
-                  "
-                  :class="[
-                    { 'border-destructive': errors[field.name] },
-                    field.name === 'account_number'
-                      ? accountNumberInputClass
-                      : '',
-                    fieldStateClass(field),
-                  ]"
-                />
-                <div
-                  v-if="field.name === 'account_number'"
-                  class="flex flex-wrap items-center gap-2"
-                >
-                  <button
-                    v-if="canUseClaimMobileForAccount"
-                    type="button"
-                    class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800 transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                    @click="copyClaimMobileToAccount"
+                  <legend
+                    class="mx-2 px-2 text-sm font-medium text-muted-foreground"
                   >
-                    Use claim mobile
-                  </button>
-                  <span
-                    v-else-if="accountUsesClaimMobile"
-                    class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
+                    {{
+                      groupName
+                        .replace("_", " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())
+                    }}
+                  </legend>
+
+                  <div
+                    class="min-w-0 space-y-3 px-4 py-3"
+                    data-testid="form-flow-field-group-content"
+                    data-flow-stack
                   >
-                    Using claim mobile
-                  </span>
-                  <button
-                    v-if="selectedAccountNumber"
-                    type="button"
-                    class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-                    @click="clearAccountNumber"
-                  >
-                    Clear
-                  </button>
-                  <details
-                    v-if="field.help_text"
-                    class="relative text-xs text-slate-500"
-                  >
-                    <summary
-                      class="flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-full border border-slate-200 bg-white font-semibold text-slate-500"
-                      aria-label="Account number help"
+                    <div
+                      v-for="field in groupFields"
+                      :key="field.name"
+                      class="min-w-0 w-full space-y-2"
                     >
-                      ?
-                    </summary>
-                    <p
-                      class="absolute left-0 z-10 mt-2 w-60 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-snug text-slate-600 shadow-lg"
-                    >
-                      {{ field.help_text }}
-                    </p>
-                  </details>
-                </div>
-                <p
-                  v-if="field.help_text && field.name !== 'account_number'"
-                  class="text-xs text-muted-foreground"
-                >
-                  {{ field.help_text }}
-                </p>
-                <p v-if="errors[field.name]" class="text-sm text-destructive">
-                  {{ errors[field.name] }}
-                </p>
+                      <!-- Render field with standard template below -->
+                      <template
+                        v-if="
+                          field.type === 'text' ||
+                          field.type === 'email' ||
+                          field.type === 'date' ||
+                          field.type === 'number'
+                        "
+                      >
+                        <Label
+                          :for="field.name"
+                          :class="[
+                            field.name === 'account_number'
+                              ? compactPayoutLabelClass
+                              : '',
+                            { 'text-destructive': errors[field.name] },
+                          ]"
+                        >
+                          {{ getFieldLabel(field) }}
+                          <span v-if="field.required" class="text-destructive"
+                            >*</span
+                          >
+                        </Label>
+                        <Input
+                          :id="field.name"
+                          v-model="formData[field.name]"
+                          :type="field.type"
+                          :placeholder="getFieldPlaceholder(field)"
+                          :required="field.required"
+                          :min="field.min"
+                          :max="field.max"
+                          :step="field.step"
+                          :readonly="field.readonly"
+                          :disabled="field.disabled"
+                          :inputmode="
+                            field.name === 'account_number'
+                              ? 'numeric'
+                              : undefined
+                          "
+                          :autocomplete="
+                            field.name === 'account_number' ? 'off' : undefined
+                          "
+                          :class="[
+                            { 'border-destructive': errors[field.name] },
+                            field.name === 'account_number'
+                              ? accountNumberInputClass
+                              : '',
+                            fieldStateClass(field),
+                          ]"
+                        />
+                        <div
+                          v-if="field.name === 'account_number'"
+                          class="flex flex-wrap items-center gap-2"
+                        >
+                          <button
+                            v-if="canUseClaimMobileForAccount"
+                            type="button"
+                            class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800 transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                            @click="copyClaimMobileToAccount"
+                          >
+                            Use claim mobile
+                          </button>
+                          <span
+                            v-else-if="accountUsesClaimMobile"
+                            class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
+                          >
+                            Using claim mobile
+                          </span>
+                          <button
+                            v-if="selectedAccountNumber"
+                            type="button"
+                            class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                            @click="clearAccountNumber"
+                          >
+                            Clear
+                          </button>
+                          <details
+                            v-if="field.help_text"
+                            class="relative text-xs text-slate-500"
+                          >
+                            <summary
+                              class="flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-full border border-slate-200 bg-white font-semibold text-slate-500"
+                              aria-label="Account number help"
+                            >
+                              ?
+                            </summary>
+                            <p
+                              class="absolute left-0 z-10 mt-2 w-60 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-snug text-slate-600 shadow-lg"
+                            >
+                              {{ field.help_text }}
+                            </p>
+                          </details>
+                        </div>
+                        <p
+                          v-if="
+                            field.help_text && field.name !== 'account_number'
+                          "
+                          class="text-xs text-muted-foreground"
+                        >
+                          {{ field.help_text }}
+                        </p>
+                        <p
+                          v-if="errors[field.name]"
+                          class="text-sm text-destructive"
+                        >
+                          {{ errors[field.name] }}
+                        </p>
+                      </template>
+
+                      <!-- Phone Input -->
+                      <template v-else-if="field.type === 'tel'">
+                        <Label
+                          :for="field.name"
+                          :class="{ 'text-destructive': errors[field.name] }"
+                        >
+                          {{ getFieldLabel(field) }}
+                          <span v-if="field.required" class="text-destructive"
+                            >*</span
+                          >
+                        </Label>
+                        <div :class="fieldShellClass(field)">
+                          <PhoneInput
+                            v-model="formData[field.name]"
+                            :error="errors[field.name]"
+                            :placeholder="field.placeholder || ''"
+                            :required="field.required"
+                            :readonly="field.readonly"
+                            :disabled="field.disabled"
+                          />
+                        </div>
+                        <!-- Transaction badges below mobile field (hide amount badge for open-mode) -->
+                        <div
+                          v-if="field.name === 'mobile' && issuerName"
+                          class="flex flex-wrap items-center gap-1.5 mt-1"
+                        >
+                          <Badge
+                            variant="outline"
+                            class="px-2 py-0.5 text-xs font-medium"
+                          >
+                            {{ issuerName }}
+                          </Badge>
+                          <template v-if="!isOpenSlice">
+                            <span class="text-muted-foreground text-xs">•</span>
+                            <Badge
+                              variant="outline"
+                              class="px-2 py-0.5 text-xs font-medium"
+                            >
+                              {{
+                                formatBadgeValue(
+                                  props.fields.find((f) => f.name === "amount"),
+                                )
+                              }}
+                            </Badge>
+                          </template>
+                        </div>
+                        <p
+                          v-if="field.help_text && field.name !== 'mobile'"
+                          class="text-xs text-muted-foreground"
+                        >
+                          {{ field.help_text }}
+                        </p>
+                      </template>
+
+                      <!-- Bank Account (BankEMISelect) -->
+                      <template v-else-if="field.type === 'bank_account'">
+                        <Label
+                          :for="field.name"
+                          :class="[
+                            compactPayoutLabelClass,
+                            { 'text-destructive': errors[field.name] },
+                          ]"
+                        >
+                          {{ getFieldLabel(field) }}
+                          <span v-if="field.required" class="text-destructive"
+                            >*</span
+                          >
+                        </Label>
+                        <div :class="fieldShellClass(field)">
+                          <BankEMISelect
+                            v-model="formData[field.name]"
+                            :settlement-rail="activeSettlementRail"
+                            :institutions="field.institution_options ?? []"
+                            :disabled="field.disabled || field.readonly"
+                          />
+                        </div>
+                        <p v-if="field.help_text" class="sr-only">
+                          {{ field.help_text }}
+                        </p>
+                        <p
+                          v-if="errors[field.name]"
+                          class="text-sm text-destructive"
+                        >
+                          {{ errors[field.name] }}
+                        </p>
+                      </template>
+
+                      <!-- Settlement Rail -->
+                      <template v-else-if="field.type === 'settlement_rail'">
+                        <Label
+                          :for="field.name"
+                          :class="[
+                            compactPayoutLabelClass,
+                            { 'text-destructive': errors[field.name] },
+                          ]"
+                        >
+                          {{ getFieldLabel(field) }}
+                          <span v-if="field.required" class="text-destructive"
+                            >*</span
+                          >
+                        </Label>
+                        <div :class="fieldShellClass(field)">
+                          <SettlementRailSelect
+                            v-model="formData[field.name]"
+                            :amount="formData.amount || 0"
+                            :bank-code="selectedBankCode || null"
+                            :disabled="field.disabled || field.readonly"
+                          />
+                        </div>
+                        <p
+                          v-if="field.help_text"
+                          class="text-xs text-muted-foreground"
+                        >
+                          {{ field.help_text }}
+                        </p>
+                        <p
+                          v-if="errors[field.name]"
+                          class="text-sm text-destructive"
+                        >
+                          {{ errors[field.name] }}
+                        </p>
+                      </template>
+
+                      <!-- Recipient Country -->
+                      <template v-else-if="field.type === 'recipient_country'">
+                        <Label
+                          :for="field.name"
+                          :class="{ 'text-destructive': errors[field.name] }"
+                        >
+                          {{ getFieldLabel(field) }}
+                          <span v-if="field.required" class="text-destructive"
+                            >*</span
+                          >
+                        </Label>
+                        <CountrySelect
+                          v-model="formData[field.name]"
+                          :disabled="field.disabled || field.readonly"
+                        />
+                        <p
+                          v-if="field.help_text"
+                          class="text-xs text-muted-foreground"
+                        >
+                          {{ field.help_text }}
+                        </p>
+                        <p
+                          v-if="errors[field.name]"
+                          class="text-sm text-destructive"
+                        >
+                          {{ errors[field.name] }}
+                        </p>
+                      </template>
+                    </div>
+                  </div>
+                </fieldset>
               </div>
 
-              <!-- Phone Input -->
-              <div v-else-if="field.type === 'tel'">
-                <Label
-                  :for="field.name"
-                  :class="{ 'text-destructive': errors[field.name] }"
+              <!-- Voucher code separator between first and remaining groups -->
+              <div
+                v-if="
+                  groupIndex === 0 &&
+                  Object.keys(groupedFields).length > 1 &&
+                  voucherCode &&
+                  heroFields.length === 0
+                "
+                class="relative my-4"
+              >
+                <Separator />
+
+                <div
+                  class="absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center bg-background/0 px-2"
                 >
-                  {{ getFieldLabel(field) }}
-                  <span v-if="field.required" class="text-destructive">*</span>
-                </Label>
-                <div :class="fieldShellClass(field)">
-                  <PhoneInput
+                  <span
+                    class="inline-flex items-center justify-center gap-1.5 rounded-full border border-primary/20 bg-background px-3 py-0.5 text-sm font-mono font-semibold tracking-widest text-primary"
+                  >
+                    <span class="text-primary/40" aria-hidden="true">||</span>
+                    {{ voucherCode }}
+                    <span class="text-primary/40" aria-hidden="true">||</span>
+                  </span>
+                </div>
+              </div>
+            </template>
+
+            <!-- Normal Fields (non-grouped, non-hero, non-badge) -->
+            <div v-if="normalFields.length > 0" class="space-y-3">
+              <div
+                v-for="field in normalFields"
+                :key="field.name"
+                class="space-y-2"
+              >
+                <!-- Text Input -->
+                <div
+                  v-if="
+                    field.type === 'text' ||
+                    field.type === 'email' ||
+                    field.type === 'date' ||
+                    field.type === 'number'
+                  "
+                >
+                  <Label
+                    :for="field.name"
+                    :class="[
+                      field.name === 'account_number'
+                        ? compactPayoutLabelClass
+                        : '',
+                      { 'text-destructive': errors[field.name] },
+                    ]"
+                  >
+                    {{ getFieldLabel(field) }}
+                    <span v-if="field.required" class="text-destructive"
+                      >*</span
+                    >
+                  </Label>
+                  <Input
+                    :id="field.name"
                     v-model="formData[field.name]"
-                    :error="errors[field.name]"
-                    :placeholder="field.placeholder || ''"
+                    :type="field.type"
+                    :placeholder="getFieldPlaceholder(field)"
+                    :required="field.required"
+                    :min="field.min"
+                    :max="field.max"
+                    :step="field.step"
+                    :readonly="field.readonly"
+                    :disabled="field.disabled"
+                    :inputmode="
+                      field.name === 'account_number' ? 'numeric' : undefined
+                    "
+                    :autocomplete="
+                      field.name === 'account_number' ? 'off' : undefined
+                    "
+                    :class="[
+                      { 'border-destructive': errors[field.name] },
+                      field.name === 'account_number'
+                        ? accountNumberInputClass
+                        : '',
+                      fieldStateClass(field),
+                    ]"
+                  />
+                  <div
+                    v-if="field.name === 'account_number'"
+                    class="flex flex-wrap items-center gap-2"
+                  >
+                    <button
+                      v-if="canUseClaimMobileForAccount"
+                      type="button"
+                      class="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-800 transition hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                      @click="copyClaimMobileToAccount"
+                    >
+                      Use claim mobile
+                    </button>
+                    <span
+                      v-else-if="accountUsesClaimMobile"
+                      class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
+                    >
+                      Using claim mobile
+                    </span>
+                    <button
+                      v-if="selectedAccountNumber"
+                      type="button"
+                      class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                      @click="clearAccountNumber"
+                    >
+                      Clear
+                    </button>
+                    <details
+                      v-if="field.help_text"
+                      class="relative text-xs text-slate-500"
+                    >
+                      <summary
+                        class="flex h-7 w-7 cursor-pointer list-none items-center justify-center rounded-full border border-slate-200 bg-white font-semibold text-slate-500"
+                        aria-label="Account number help"
+                      >
+                        ?
+                      </summary>
+                      <p
+                        class="absolute left-0 z-10 mt-2 w-60 rounded-lg border border-slate-200 bg-white p-3 text-xs leading-snug text-slate-600 shadow-lg"
+                      >
+                        {{ field.help_text }}
+                      </p>
+                    </details>
+                  </div>
+                  <p
+                    v-if="field.help_text && field.name !== 'account_number'"
+                    class="text-xs text-muted-foreground"
+                  >
+                    {{ field.help_text }}
+                  </p>
+                  <p v-if="errors[field.name]" class="text-sm text-destructive">
+                    {{ errors[field.name] }}
+                  </p>
+                </div>
+
+                <!-- Phone Input -->
+                <div v-else-if="field.type === 'tel'">
+                  <Label
+                    :for="field.name"
+                    :class="{ 'text-destructive': errors[field.name] }"
+                  >
+                    {{ getFieldLabel(field) }}
+                    <span v-if="field.required" class="text-destructive"
+                      >*</span
+                    >
+                  </Label>
+                  <div :class="fieldShellClass(field)">
+                    <PhoneInput
+                      v-model="formData[field.name]"
+                      :error="errors[field.name]"
+                      :placeholder="field.placeholder || ''"
+                      :required="field.required"
+                      :readonly="field.readonly"
+                      :disabled="field.disabled"
+                    />
+                  </div>
+                </div>
+
+                <!-- Textarea -->
+                <div v-else-if="field.type === 'textarea'">
+                  <Label
+                    :for="field.name"
+                    :class="{ 'text-destructive': errors[field.name] }"
+                  >
+                    {{ getFieldLabel(field) }}
+                    <span v-if="field.required" class="text-destructive"
+                      >*</span
+                    >
+                  </Label>
+                  <Textarea
+                    :id="field.name"
+                    v-model="formData[field.name]"
+                    :placeholder="getFieldPlaceholder(field)"
                     :required="field.required"
                     :readonly="field.readonly"
                     :disabled="field.disabled"
-                  />
-                </div>
-              </div>
-
-              <!-- Textarea -->
-              <div v-else-if="field.type === 'textarea'">
-                <Label
-                  :for="field.name"
-                  :class="{ 'text-destructive': errors[field.name] }"
-                >
-                  {{ getFieldLabel(field) }}
-                  <span v-if="field.required" class="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  :id="field.name"
-                  v-model="formData[field.name]"
-                  :placeholder="getFieldPlaceholder(field)"
-                  :required="field.required"
-                  :readonly="field.readonly"
-                  :disabled="field.disabled"
-                  :class="{ 'border-destructive': errors[field.name] }"
-                  rows="4"
-                />
-                <p v-if="errors[field.name]" class="text-sm text-destructive">
-                  {{ errors[field.name] }}
-                </p>
-              </div>
-
-              <!-- Select -->
-              <div v-else-if="field.type === 'select'">
-                <Label
-                  :for="field.name"
-                  :class="{ 'text-destructive': errors[field.name] }"
-                >
-                  {{ getFieldLabel(field) }}
-                  <span v-if="field.required" class="text-destructive">*</span>
-                </Label>
-                <Select
-                  v-model="formData[field.name]"
-                  :required="field.required"
-                  :disabled="field.disabled"
-                >
-                  <SelectTrigger
                     :class="{ 'border-destructive': errors[field.name] }"
+                    rows="4"
+                  />
+                  <p v-if="errors[field.name]" class="text-sm text-destructive">
+                    {{ errors[field.name] }}
+                  </p>
+                </div>
+
+                <!-- Select -->
+                <div v-else-if="field.type === 'select'">
+                  <Label
+                    :for="field.name"
+                    :class="{ 'text-destructive': errors[field.name] }"
                   >
-                    <SelectValue
-                      :placeholder="`Select ${getFieldLabel(field).toLowerCase()}`"
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem
-                      v-for="option in field.options || []"
-                      :key="option"
-                      :value="option"
+                    {{ getFieldLabel(field) }}
+                    <span v-if="field.required" class="text-destructive"
+                      >*</span
                     >
-                      {{ option }}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <p v-if="errors[field.name]" class="text-sm text-destructive">
-                  {{ errors[field.name] }}
-                </p>
-              </div>
-
-              <!-- Checkbox -->
-              <div
-                v-else-if="field.type === 'checkbox'"
-                class="flex items-center space-x-2"
-              >
-                <Checkbox
-                  :id="field.name"
-                  :checked="formData[field.name]"
-                  @update:modelValue="
-                    (value) => {
-                      console.log(
-                        `[GenericForm] Checkbox '${field.name}' changed:`,
-                        value,
-                        'type:',
-                        typeof value,
-                      );
-                      formData[field.name] = value;
-                      console.log(
-                        `[GenericForm] formData['${field.name}'] is now:`,
-                        formData[field.name],
-                      );
-                    }
-                  "
-                  :required="field.required"
-                  :disabled="field.disabled"
-                  :class="{ 'border-destructive': errors[field.name] }"
-                />
-                <Label
-                  :for="field.name"
-                  :class="{ 'text-destructive': errors[field.name] }"
-                  class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {{ getFieldLabel(field) }}
-                  <span v-if="field.required" class="text-destructive">*</span>
-                </Label>
-                <p
-                  v-if="errors[field.name]"
-                  class="text-sm text-destructive ml-6"
-                >
-                  {{ errors[field.name] }}
-                </p>
-              </div>
-
-              <!-- File Input -->
-              <div v-else-if="field.type === 'file'">
-                <Label
-                  :for="field.name"
-                  :class="{ 'text-destructive': errors[field.name] }"
-                >
-                  {{ getFieldLabel(field) }}
-                  <span v-if="field.required" class="text-destructive">*</span>
-                </Label>
-                <Input
-                  :id="field.name"
-                  type="file"
-                  :required="field.required"
-                  :class="{ 'border-destructive': errors[field.name] }"
-                  @change="
-                    (e: Event) => {
-                      const target = e.target as HTMLInputElement;
-                      formData[field.name] = target.files?.[0] || null;
-                    }
-                  "
-                />
-                <p v-if="errors[field.name]" class="text-sm text-destructive">
-                  {{ errors[field.name] }}
-                </p>
-              </div>
-
-              <!-- Recipient Country -->
-              <div v-else-if="field.type === 'recipient_country'">
-                <Label
-                  :for="field.name"
-                  :class="{ 'text-destructive': errors[field.name] }"
-                >
-                  {{ getFieldLabel(field) }}
-                  <span v-if="field.required" class="text-destructive">*</span>
-                </Label>
-                <CountrySelect
-                  v-model="formData[field.name]"
-                  :disabled="field.disabled || field.readonly"
-                />
-                <p v-if="errors[field.name]" class="text-sm text-destructive">
-                  {{ errors[field.name] }}
-                </p>
-              </div>
-
-              <!-- Settlement Rail -->
-              <div v-else-if="field.type === 'settlement_rail'">
-                <Label
-                  :for="field.name"
-                  :class="[
-                    compactPayoutLabelClass,
-                    { 'text-destructive': errors[field.name] },
-                  ]"
-                >
-                  {{ getFieldLabel(field) }}
-                  <span v-if="field.required" class="text-destructive">*</span>
-                </Label>
-                <div :class="fieldShellClass(field)">
-                  <SettlementRailSelect
+                  </Label>
+                  <Select
                     v-model="formData[field.name]"
-                    :amount="formData.amount || 0"
-                    :bank-code="selectedBankCode || null"
+                    :required="field.required"
+                    :disabled="field.disabled"
+                  >
+                    <SelectTrigger
+                      :class="{ 'border-destructive': errors[field.name] }"
+                    >
+                      <SelectValue
+                        :placeholder="`Select ${getFieldLabel(field).toLowerCase()}`"
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem
+                        v-for="option in field.options || []"
+                        :key="option"
+                        :value="option"
+                      >
+                        {{ option }}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p v-if="errors[field.name]" class="text-sm text-destructive">
+                    {{ errors[field.name] }}
+                  </p>
+                </div>
+
+                <!-- Checkbox -->
+                <div
+                  v-else-if="field.type === 'checkbox'"
+                  class="flex items-center space-x-2"
+                >
+                  <Checkbox
+                    :id="field.name"
+                    :checked="formData[field.name]"
+                    @update:modelValue="
+                      (value) => {
+                        console.log(
+                          `[GenericForm] Checkbox '${field.name}' changed:`,
+                          value,
+                          'type:',
+                          typeof value,
+                        );
+                        formData[field.name] = value;
+                        console.log(
+                          `[GenericForm] formData['${field.name}'] is now:`,
+                          formData[field.name],
+                        );
+                      }
+                    "
+                    :required="field.required"
+                    :disabled="field.disabled"
+                    :class="{ 'border-destructive': errors[field.name] }"
+                  />
+                  <Label
+                    :for="field.name"
+                    :class="{ 'text-destructive': errors[field.name] }"
+                    class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    {{ getFieldLabel(field) }}
+                    <span v-if="field.required" class="text-destructive"
+                      >*</span
+                    >
+                  </Label>
+                  <p
+                    v-if="errors[field.name]"
+                    class="text-sm text-destructive ml-6"
+                  >
+                    {{ errors[field.name] }}
+                  </p>
+                </div>
+
+                <!-- File Input -->
+                <div v-else-if="field.type === 'file'">
+                  <Label
+                    :for="field.name"
+                    :class="{ 'text-destructive': errors[field.name] }"
+                  >
+                    {{ getFieldLabel(field) }}
+                    <span v-if="field.required" class="text-destructive"
+                      >*</span
+                    >
+                  </Label>
+                  <Input
+                    :id="field.name"
+                    type="file"
+                    :required="field.required"
+                    :class="{ 'border-destructive': errors[field.name] }"
+                    @change="
+                      (e: Event) => {
+                        const target = e.target as HTMLInputElement;
+                        formData[field.name] = target.files?.[0] || null;
+                      }
+                    "
+                  />
+                  <p v-if="errors[field.name]" class="text-sm text-destructive">
+                    {{ errors[field.name] }}
+                  </p>
+                </div>
+
+                <!-- Recipient Country -->
+                <div v-else-if="field.type === 'recipient_country'">
+                  <Label
+                    :for="field.name"
+                    :class="{ 'text-destructive': errors[field.name] }"
+                  >
+                    {{ getFieldLabel(field) }}
+                    <span v-if="field.required" class="text-destructive"
+                      >*</span
+                    >
+                  </Label>
+                  <CountrySelect
+                    v-model="formData[field.name]"
                     :disabled="field.disabled || field.readonly"
                   />
+                  <p v-if="errors[field.name]" class="text-sm text-destructive">
+                    {{ errors[field.name] }}
+                  </p>
                 </div>
-                <p v-if="errors[field.name]" class="text-sm text-destructive">
-                  {{ errors[field.name] }}
-                </p>
-              </div>
 
-              <!-- Bank/EMI Account -->
-              <div v-else-if="field.type === 'bank_account'">
-                <Label
-                  :for="field.name"
-                  :class="[
-                    compactPayoutLabelClass,
-                    { 'text-destructive': errors[field.name] },
-                  ]"
-                >
-                  {{ getFieldLabel(field) }}
-                  <span v-if="field.required" class="text-destructive">*</span>
-                </Label>
-                <div :class="fieldShellClass(field)">
-                  <BankEMISelect
-                    v-model="formData[field.name]"
-                    :settlement-rail="activeSettlementRail"
-                    :institutions="field.institution_options ?? []"
-                    :disabled="field.disabled || field.readonly"
-                  />
+                <!-- Settlement Rail -->
+                <div v-else-if="field.type === 'settlement_rail'">
+                  <Label
+                    :for="field.name"
+                    :class="[
+                      compactPayoutLabelClass,
+                      { 'text-destructive': errors[field.name] },
+                    ]"
+                  >
+                    {{ getFieldLabel(field) }}
+                    <span v-if="field.required" class="text-destructive"
+                      >*</span
+                    >
+                  </Label>
+                  <div :class="fieldShellClass(field)">
+                    <SettlementRailSelect
+                      v-model="formData[field.name]"
+                      :amount="formData.amount || 0"
+                      :bank-code="selectedBankCode || null"
+                      :disabled="field.disabled || field.readonly"
+                    />
+                  </div>
+                  <p v-if="errors[field.name]" class="text-sm text-destructive">
+                    {{ errors[field.name] }}
+                  </p>
                 </div>
-                <p v-if="errors[field.name]" class="text-sm text-destructive">
-                  {{ errors[field.name] }}
-                </p>
+
+                <!-- Bank/EMI Account -->
+                <div v-else-if="field.type === 'bank_account'">
+                  <Label
+                    :for="field.name"
+                    :class="[
+                      compactPayoutLabelClass,
+                      { 'text-destructive': errors[field.name] },
+                    ]"
+                  >
+                    {{ getFieldLabel(field) }}
+                    <span v-if="field.required" class="text-destructive"
+                      >*</span
+                    >
+                  </Label>
+                  <div :class="fieldShellClass(field)">
+                    <BankEMISelect
+                      v-model="formData[field.name]"
+                      :settlement-rail="activeSettlementRail"
+                      :institutions="field.institution_options ?? []"
+                      :disabled="field.disabled || field.readonly"
+                    />
+                  </div>
+                  <p v-if="errors[field.name]" class="text-sm text-destructive">
+                    {{ errors[field.name] }}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div
-            v-if="payoutRouteVisible"
-            class="min-w-0 rounded-xl border border-blue-100 bg-blue-50/70 p-4 dark:border-blue-950 dark:bg-blue-950/20"
-            data-testid="form-flow-destination-summary"
-          >
-            <div class="flex items-start justify-between gap-3">
-              <div class="min-w-0">
-                <p
-                  class="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700 dark:text-blue-300"
+            <div
+              v-if="payoutRouteVisible"
+              class="min-w-0 rounded-xl border border-blue-100 bg-blue-50/70 p-4 dark:border-blue-950 dark:bg-blue-950/20"
+              data-testid="form-flow-destination-summary"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p
+                    class="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-700 dark:text-blue-300"
+                  >
+                    Send to
+                  </p>
+                </div>
+                <Badge
+                  variant="outline"
+                  class="shrink-0 border-blue-200 bg-white/80 text-[10px] text-blue-900 dark:border-blue-900 dark:bg-blue-950/80 dark:text-blue-100"
                 >
-                  Send to
-                </p>
+                  {{
+                    selectedDestination.category === "wallet"
+                      ? "Wallet"
+                      : "Bank"
+                  }}
+                </Badge>
               </div>
-              <Badge
-                variant="outline"
-                class="shrink-0 border-blue-200 bg-white/80 text-[10px] text-blue-900 dark:border-blue-900 dark:bg-blue-950/80 dark:text-blue-100"
+              <dl class="mt-4 grid min-w-0 grid-cols-2 gap-4">
+                <div
+                  v-for="detail in payoutRouteDetails"
+                  :key="detail.label"
+                  class="min-w-0"
+                >
+                  <dt
+                    class="text-[11px] leading-4 text-slate-500 dark:text-slate-400"
+                  >
+                    {{ detail.label }}
+                  </dt>
+                  <dd
+                    class="mt-1 flex min-w-0 items-start gap-2 text-sm font-semibold leading-5 text-slate-950 dark:text-white"
+                  >
+                    <PayoutDestinationIcon
+                      :icon-asset="detail.icon"
+                      alt=""
+                      size-class="h-5 w-5 shrink-0"
+                    />
+                    <span
+                      class="min-w-0 break-words [overflow-wrap:anywhere]"
+                      :class="
+                        detail.label === 'Account number'
+                          ? 'font-mono tabular-nums'
+                          : ''
+                      "
+                      >{{ detail.value }}</span
+                    >
+                  </dd>
+                </div>
+              </dl>
+              <p
+                class="mt-4 border-t border-blue-100 pt-3 text-xs leading-relaxed text-slate-500 dark:border-blue-950 dark:text-slate-400"
               >
-                {{
-                  selectedDestination.category === "wallet" ? "Wallet" : "Bank"
-                }}
-              </Badge>
+                Check the destination before continuing. Maya Wallet and Maya
+                Bank are different destinations.
+              </p>
             </div>
-            <dl class="mt-4 grid min-w-0 grid-cols-2 gap-4">
-              <div v-for="detail in payoutRouteDetails" :key="detail.label" class="min-w-0">
-                <dt class="text-[11px] leading-4 text-slate-500 dark:text-slate-400">{{ detail.label }}</dt>
-                <dd class="mt-1 flex min-w-0 items-start gap-2 text-sm font-semibold leading-5 text-slate-950 dark:text-white">
-                  <PayoutDestinationIcon :icon-asset="detail.icon" alt="" size-class="h-5 w-5 shrink-0" />
-                  <span class="min-w-0 break-words [overflow-wrap:anywhere]" :class="detail.label === 'Account number' ? 'font-mono tabular-nums' : ''">{{ detail.value }}</span>
-                </dd>
-              </div>
-            </dl>
-            <p class="mt-4 border-t border-blue-100 pt-3 text-xs leading-relaxed text-slate-500 dark:border-blue-950 dark:text-slate-400">
-              Check the destination before continuing. Maya Wallet and Maya Bank
-              are different destinations.
-            </p>
-          </div>
 
-          <FormFlowActions
-            primary-type="submit"
-            secondary-label="Cancel"
-            :primary-label="submitLabel"
-            :variant="uiVariant"
-            :action-placement="props.action_placement"
-            :primary-disabled="submitting"
-            :secondary-disabled="submitting"
-            :processing="submitting"
-            @secondary="handleCancel"
-          />
-        </form>
-      </CardContent>
-    </Card>
+            <FormFlowActions
+              :primary-role="claimWorkflow ? 'submit' : 'continue'"
+              secondary-role="cancel"
+              primary-type="submit"
+              secondary-label="Cancel"
+              :primary-label="submitLabel"
+              :variant="uiVariant"
+              :action-placement="props.action_placement"
+              :primary-disabled="submitting"
+              :secondary-disabled="submitting"
+              :processing="submitting"
+              @secondary="handleCancel"
+            />
+          </form>
+        </CardContent>
+      </Card>
 
-    <FormFlowVersionStrip
-      v-if="!presentation"
-      :show="props.show_package_versions"
-      :package-versions="props.package_versions"
-      :context="props.package_version_context"
-    />
-  </div>
-
+      <FormFlowVersionStrip
+        v-if="!presentation"
+        :show="props.show_package_versions"
+        :package-versions="props.package_versions"
+        :context="props.package_version_context"
+      />
+    </div>
   </FormFlowPresentation>
 </template>

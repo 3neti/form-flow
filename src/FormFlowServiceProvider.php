@@ -9,6 +9,7 @@ use Illuminate\Support\ServiceProvider;
 use LBHurtado\FormFlowManager\Handlers\FormHandler;
 use LBHurtado\FormFlowManager\Handlers\SplashHandler;
 use LBHurtado\FormFlowManager\Services\DriverRegistry;
+use LBHurtado\FormFlowManager\Services\FormFlowPresentationResolver;
 use LBHurtado\FormFlowManager\Services\FormFlowService;
 use LBHurtado\FormFlowManager\Services\FormHandlerRegistry;
 
@@ -35,6 +36,7 @@ class FormFlowServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(FormHandlerRegistry::class);
+        $this->app->singleton(FormFlowPresentationResolver::class);
 
         // Merge package config
         $this->mergeConfigFrom(

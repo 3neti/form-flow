@@ -78,7 +78,7 @@ it('renders disbursement details as large mobile-safe destination controls', fun
         ->toContain('sr-only')
         ->toContain('Send to')
         ->toContain('rounded-xl border border-blue-100 bg-blue-50/70')
-        ->toContain('Check the destination before continuing. Maya Wallet and Maya Bank');
+        ->toMatch('/Check the destination before continuing\. Maya Wallet and Maya\s+Bank/');
 });
 
 it('exposes the package version strip in the shared form flow screen stub', function (): void {
@@ -155,7 +155,8 @@ it('tightens the redemption confirmation screen into a semantic payout summary',
 
     // 4. Institution and rail icons render after their authoritative text
     // values (value span appears before the icon component in source).
-    $valueSpanPos = strpos($stub, '{{ field.value }}</span>');
+    $matched = preg_match('/\{\{\s*field.value\s*\}\}\s*<\/span\s*>/', $stub, $valueMatch, PREG_OFFSET_CAPTURE);
+    $valueSpanPos = $matched === 1 ? $valueMatch[0][1] : false;
     $iconPos = strpos($stub, '<PayoutDestinationIcon');
 
     expect($valueSpanPos)->not->toBeFalse()
@@ -164,7 +165,7 @@ it('tightens the redemption confirmation screen into a semantic payout summary',
 
     // 5. Icon failure cannot remove the textual value: the value span is
     // unconditional (not gated behind the same v-if as the icon).
-    expect($stub)->toContain('{{ field.value }}</span>');
+    expect($stub)->toMatch('/\{\{\s*field.value\s*\}\}\s*<\/span\s*>/');
 
     // Decorative icons must not duplicate screen-reader announcements.
     expect($stub)

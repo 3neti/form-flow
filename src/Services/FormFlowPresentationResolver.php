@@ -13,11 +13,29 @@ final class FormFlowPresentationResolver
 {
     public const Schema = 'form-flow.presentation.v1';
 
+    /** @var list<string> */
+    private array $screens = ['form', 'splash', 'completion', 'missing_handler'];
+
+    /** @param list<string> $screens */
+    public function registerScreens(array $screens): void
+    {
+        config()->set('form-flow.presentation.screen_keys', array_values(array_unique([...$this->screenKeys(), ...$screens])));
+    }
+
+    /** @return list<string> */
+    private function screenKeys(): array
+    {
+        return array_values(array_unique([...$this->screens, ...(array) config('form-flow.presentation.screen_keys', [])]));
+    }
+
     /** @return array<string, mixed> */
     public function defaults(): array
     {
         return [
             'schema' => self::Schema,
+            'tokens' => [],
+            'screens' => [],
+            'notices' => [],
             'appearance' => [
                 'mode' => 'light',
                 'light' => ['canvas' => '#ffffff', 'surface' => '#ffffff', 'foreground' => '#0f172a', 'muted' => '#64748b', 'border' => '#e2e8f0', 'accent' => '#0f172a', 'accent_foreground' => '#ffffff'],
@@ -44,9 +62,29 @@ final class FormFlowPresentationResolver
     }
 
     /** @param array<string, mixed> $value */
-    private function validate(array $value, string $path): void
+    private function validate(array $value, string $path, bool $screenOverride = false): void
     {
+        if (isset($value['screens']) && ! is_array($value['screens'])) {
+            throw ValidationException::withMessages([$path.'.screens' => 'Screens must be a mapping.']);
+        }
+        foreach (($value['screens'] ?? []) as $key => $override) {
+            if ($screenOverride || ! in_array($key, $this->screenKeys(), true) || ! is_array($override)
+                || array_intersect(['screens', 'profile', 'schema', 'screen'], array_keys($override))) {
+                throw ValidationException::withMessages([$path.'.screens' => 'Unknown screen or recursive screen configuration.']);
+            }
+            $this->validate($override, $path.'.screens.'.$key, true);
+        }
         $rules = [
+            "$path.screen" => 'sometimes|in:'.implode(',', $this->screenKeys()),
+            "$path.screens" => 'sometimes|array',
+            "$path.tokens" => 'sometimes|array:content_width,spacing,typography,control_size',
+            "$path.tokens.content_width" => 'sometimes|in:narrow,standard,wide',
+            "$path.tokens.spacing" => 'sometimes|in:compact,comfortable,spacious',
+            "$path.tokens.typography" => 'sometimes|in:small,standard,large',
+            "$path.tokens.control_size" => 'sometimes|in:standard,large',
+            "$path.actions.roles" => 'sometimes|array:continue,back,capture,retake,clear,send_code,verify,retry,confirm_claim,cancel,open_link,create_payment,download,submit',
+            "$path.notices" => 'sometimes|array:info,pending,success,attention,error',
+
             "$path.artwork" => 'sometimes|array:background,foreground',
             "$path.artwork.background" => 'sometimes|array:enabled,opacity,blur,overlay',
             "$path.artwork.background.enabled" => 'sometimes|boolean',
@@ -76,23 +114,36 @@ final class FormFlowPresentationResolver
             $rules["$path.icons.$role.name"] = 'sometimes|in:receipt,clipboard-check,clock,circle-check,triangle-alert,circle-alert,shield-check';
             $rules["$path.icons.$role.color"] = ['sometimes', 'string', 'regex:/^(foreground|#[0-9a-fA-F]{6})$/'];
         }
+        foreach (['continue', 'back', 'capture', 'retake', 'clear', 'send_code', 'verify', 'retry', 'confirm_claim', 'cancel', 'open_link', 'create_payment', 'download', 'submit'] as $role) {
+            $rules["$path.actions.roles.$role"] = 'sometimes|array:label,processing_label';
+            foreach (['label', 'processing_label'] as $label) {
+                $rules["$path.actions.roles.$role.$label"] = ['sometimes', 'string', 'min:1', 'max:100', 'not_regex:/[<>]/'];
+            }
+        }
+        foreach (['info', 'pending', 'success', 'attention', 'error'] as $role) {
+            $rules["$path.notices.$role"] = 'sometimes|array:background,foreground,border,icon';
+            foreach (['background', 'foreground', 'border'] as $color) {
+                $rules["$path.notices.$role.$color"] = ['sometimes', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'];
+            }
+            $rules["$path.notices.$role.icon"] = 'sometimes|in:receipt,clipboard-check,clock,circle-check,triangle-alert,circle-alert,shield-check';
+        }
         Validator::make([$path => $value], [...$rules,
 
-            $path => 'array:schema,profile,brand,layout,actions,progress,diagnostics,appearance,icons,artwork',
+            $path => 'array:schema,profile,screen,screens,tokens,notices,brand,layout,actions,progress,diagnostics,appearance,icons,artwork',
             "$path.schema" => 'sometimes|in:'.self::Schema,
             "$path.profile" => 'sometimes|string|max:100',
             "$path.brand" => 'sometimes|array:name,logo,placement,logo_height,logo_max_width',
             "$path.brand.name" => 'nullable|string|max:100',
             "$path.brand.logo" => 'nullable|string|max:2048',
             "$path.brand.placement" => 'sometimes|in:top_left,center',
-            "$path.brand.logo_height" => 'sometimes|integer|min:8|max:48',
+            "$path.brand.logo_height" => 'sometimes|integer|min:8|max:96',
             "$path.brand.logo_max_width" => 'sometimes|integer|min:32|max:240',
             "$path.layout" => 'sometimes|array:density,capture_surface,scrolling,artwork_aspect_ratio',
             "$path.layout.density" => 'sometimes|in:default,compact,immersive',
             "$path.layout.capture_surface" => 'sometimes|in:fill_available,contained',
             "$path.layout.artwork_aspect_ratio" => 'sometimes|in:natural,1200/630,1/1,4/3,3/2,16/9',
             "$path.layout.scrolling" => 'sometimes|in:when_needed',
-            "$path.actions" => 'sometimes|array:placement,primary_position,secondary_position,reserve_content_space,primary_label,secondary_label',
+            "$path.actions" => 'sometimes|array:placement,primary_position,secondary_position,reserve_content_space,primary_label,secondary_label,roles',
             "$path.actions.placement" => 'sometimes|in:inline,bottom,bottom_sticky,viewport_bottom',
             "$path.actions.primary_position" => 'sometimes|in:right',
             "$path.actions.secondary_position" => 'sometimes|in:left',
@@ -107,7 +158,7 @@ final class FormFlowPresentationResolver
     }
 
     /** @param array<string, mixed> $driver @param array<string, mixed> $step @return array<string, mixed> */
-    public function resolve(array $driver, array $step = []): array
+    public function resolve(array $driver, array $step = [], ?string $screen = null): array
     {
         $this->validate($driver, 'presentation');
         $this->validate($step, 'step_presentation');
@@ -120,7 +171,21 @@ final class FormFlowPresentationResolver
         if (isset($profile['profile'])) {
             throw ValidationException::withMessages(['presentation.profile' => 'Presentation profiles cannot inherit another profile.']);
         }
-        $resolved = array_replace_recursive($this->defaults(), $profile, $driver, $step);
+        $base = array_replace_recursive($this->defaults(), $profile, $driver);
+        $screen = $step['screen'] ?? $screen ?? $driver['screen'] ?? null;
+        if ($screen !== null && ! in_array($screen, $this->screenKeys(), true)) {
+            throw ValidationException::withMessages(['presentation.screen' => 'Unknown presentation screen.']);
+        }
+        $resolved = array_replace_recursive($base, $base['screens'][$screen] ?? [], $step);
+        if ($screen !== null) {
+            $resolved['screen'] = $screen;
+        }
+        if (! app()->environment(['local', 'testing'])) {
+            foreach ($resolved['screens'] as &$override) {
+                $override['diagnostics']['show_versions'] = false;
+            }
+            unset($override);
+        }
         $resolved['diagnostics']['show_versions'] = app()->environment(['local', 'testing'])
             && $resolved['diagnostics']['show_versions'];
 
@@ -143,7 +208,7 @@ final class FormFlowPresentationResolver
         }
         foreach ($instructions->steps as $index => $step) {
             $step = $step instanceof FormFlowStepData ? $step : FormFlowStepData::from($step);
-            $resolved = $this->resolve($instructions->presentation ?? [], $step->config['presentation'] ?? []);
+            $resolved = $this->resolve($instructions->presentation ?? [], $step->config['presentation'] ?? [], in_array($step->handler, $this->screenKeys(), true) ? $step->handler : null);
             $resolved['progress'] += ['current' => $index + 1, 'total' => $total];
             $resolved['fingerprint'] = hash('sha256', json_encode($resolved, JSON_THROW_ON_ERROR));
             $payload['steps'][$index]['config'] = array_replace($step->config, [

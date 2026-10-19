@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useFormFlowPresentation } from "./formFlowPresentation";
 
 interface PackageVersion {
   name: string;
@@ -20,6 +21,9 @@ const props = withDefaults(
     context: null,
   },
 );
+
+const presentation = useFormFlowPresentation();
+const showVersions = computed(() => presentation.value?.diagnostics.show_versions ?? props.show);
 
 const normalizedPackageVersions = computed<PackageVersion[]>(() => {
   const versions = props.packageVersions;
@@ -75,7 +79,7 @@ const visiblePackageVersions = computed<PackageVersion[]>(() => {
 
 <template>
   <div
-    v-if="props.show && visiblePackageVersions.length > 0"
+    v-if="showVersions && visiblePackageVersions.length > 0"
     class="mx-auto mt-2 flex w-full max-w-md items-center justify-center gap-1.5 overflow-hidden text-center text-[9px] leading-none text-muted-foreground/70"
     data-testid="form-flow-package-version-strip"
     aria-label="Form flow package versions"

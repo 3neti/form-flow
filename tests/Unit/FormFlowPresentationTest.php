@@ -147,3 +147,49 @@ it('rejects unsupported artwork presentation settings', function (array $artwork
     [['foreground' => ['padding' => 0]]],
     [['foreground' => ['top_spacing' => 1000]]],
 ])->throws(ValidationException::class);
+
+it('resolves registered screen overrides before explicit step settings', function () {
+    $resolver = app(FormFlowPresentationResolver::class);
+    $resolver->registerScreens(['capture']);
+    config()->set('form-flow.presentation.profiles.tokens', [
+        'tokens' => ['spacing' => 'comfortable'],
+        'screens' => ['capture' => ['tokens' => ['spacing' => 'spacious'], 'actions' => ['roles' => ['capture' => ['label' => 'Take photo']]]]],
+    ]);
+    $result = $resolver->resolve(['profile' => 'tokens', 'tokens' => ['spacing' => 'compact']], ['tokens' => ['content_width' => 'wide']], 'capture');
+    expect($result['tokens'])->toBe(['spacing' => 'spacious', 'content_width' => 'wide'])
+        ->and($result['actions']['roles']['capture']['label'])->toBe('Take photo');
+    expect($resolver->resolve(['profile' => 'tokens'], ['tokens' => ['spacing' => 'compact']], 'capture')['tokens']['spacing'])->toBe('compact');
+});
+
+it('rejects unbounded tokens and screen or action behavior overrides', function (array $value) {
+    app(FormFlowPresentationResolver::class)->resolve($value);
+})->with([
+    [['tokens' => ['content_width' => '10000px']]],
+    [['tokens' => ['spacing' => 'custom']]],
+    [['tokens' => ['typography' => 'html']]],
+    [['tokens' => ['control_size' => 'tiny']]],
+    [['screens' => ['unknown' => []]]],
+    [['screens' => ['form' => ['screens' => []]]]],
+    [['screens' => ['form' => ['profile' => 'other']]]],
+    [['actions' => ['roles' => ['capture' => ['href' => '/transfer']]]]],
+    [['actions' => ['roles' => ['capture' => ['label' => '<b>Take photo</b>']]]]],
+    [['notices' => ['error' => ['background' => 'red']]]],
+])->throws(ValidationException::class);
+
+it('freezes tokens screen overrides and action copy for live and preview', function () {
+    $resolver = app(FormFlowPresentationResolver::class);
+    config()->set('form-flow.presentation.profiles.frozen', ['screens' => ['form' => ['tokens' => ['control_size' => 'large'], 'actions' => ['roles' => ['continue' => ['label' => 'Next details']]]]]]);
+    $instructions = FormFlowInstructionsData::from(['reference_id' => 'frozen-tokens', 'presentation' => ['profile' => 'frozen'], 'steps' => [['handler' => 'form', 'config' => []]]]);
+    $flows = app(FormFlowService::class);
+    $live = $flows->startFlow($instructions);
+    $preview = app(FormFlowPreviewCompiler::class)->compile($instructions);
+    expect($preview[0]->props['presentation'])->toBe($live['instructions']['steps'][0]['config']['presentation']);
+    config()->set('form-flow.presentation.profiles.frozen.screens.form.tokens.control_size', 'standard');
+    expect(data_get($flows->getFlowState($live['flow_id']), 'instructions.steps.0.config.presentation.tokens.control_size'))->toBe('large');
+});
+
+it('suppresses diagnostics inside frozen screen overrides in production', function () {
+    $this->app['env'] = 'production';
+    $result = app(FormFlowPresentationResolver::class)->resolve(['screens' => ['form' => ['diagnostics' => ['show_versions' => true]]]]);
+    expect($result['screens']['form']['diagnostics']['show_versions'])->toBeFalse();
+});
