@@ -31,6 +31,10 @@ final class FormFlowPresentationResolver
                 'attention' => ['name' => 'triangle-alert', 'color' => '#d97706'],
                 'error' => ['name' => 'circle-alert', 'color' => '#dc2626'],
             ],
+            'artwork' => [
+                'background' => ['enabled' => false, 'opacity' => 0.45, 'blur' => 18, 'overlay' => 0.65],
+                'foreground' => ['position' => 'top', 'top_spacing' => 24, 'gap' => 20, 'padding' => 20, 'max_width' => 672],
+            ],
             'brand' => ['name' => null, 'logo' => null, 'placement' => 'top_left', 'logo_height' => 32, 'logo_max_width' => 112],
             'layout' => ['density' => 'compact', 'capture_surface' => 'fill_available', 'scrolling' => 'when_needed', 'artwork_aspect_ratio' => 'natural'],
             'actions' => ['placement' => 'viewport_bottom', 'primary_position' => 'right', 'secondary_position' => 'left', 'reserve_content_space' => true, 'primary_label' => null, 'secondary_label' => null],
@@ -43,6 +47,19 @@ final class FormFlowPresentationResolver
     private function validate(array $value, string $path): void
     {
         $rules = [
+            "$path.artwork" => 'sometimes|array:background,foreground',
+            "$path.artwork.background" => 'sometimes|array:enabled,opacity,blur,overlay',
+            "$path.artwork.background.enabled" => 'sometimes|boolean',
+            "$path.artwork.background.opacity" => 'sometimes|numeric|min:0|max:1',
+            "$path.artwork.background.blur" => 'sometimes|integer|min:0|max:40',
+            "$path.artwork.background.overlay" => 'sometimes|numeric|min:0|max:1',
+            "$path.artwork.foreground" => 'sometimes|array:position,top_spacing,gap,padding,max_width',
+            "$path.artwork.foreground.position" => 'sometimes|in:top,center',
+            "$path.artwork.foreground.top_spacing" => 'sometimes|integer|min:0|max:96',
+            "$path.artwork.foreground.gap" => 'sometimes|integer|min:0|max:48',
+            "$path.artwork.foreground.padding" => 'sometimes|integer|min:8|max:40',
+            "$path.artwork.foreground.max_width" => 'sometimes|integer|min:240|max:1200',
+
             "$path.appearance" => 'sometimes|array:mode,light,dark',
             "$path.appearance.mode" => 'sometimes|in:light,dark,system',
             "$path.icons" => 'sometimes|array:size,review,pending,success,attention,error',
@@ -61,7 +78,7 @@ final class FormFlowPresentationResolver
         }
         Validator::make([$path => $value], [...$rules,
 
-            $path => 'array:schema,profile,brand,layout,actions,progress,diagnostics,appearance,icons',
+            $path => 'array:schema,profile,brand,layout,actions,progress,diagnostics,appearance,icons,artwork',
             "$path.schema" => 'sometimes|in:'.self::Schema,
             "$path.profile" => 'sometimes|string|max:100',
             "$path.brand" => 'sometimes|array:name,logo,placement,logo_height,logo_max_width',

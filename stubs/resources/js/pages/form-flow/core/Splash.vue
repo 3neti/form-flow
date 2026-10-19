@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import { initializeTheme } from "@/composables/useTheme";
+import FormFlowArtworkSurface from "./components/FormFlowArtworkSurface.vue";
 import FormFlowHtmlContent from "./components/FormFlowHtmlContent.vue";
 import FormFlowActions from "./components/FormFlowActions.vue";
 import FormFlowVersionStrip from "./components/FormFlowVersionStrip.vue";
@@ -185,11 +186,17 @@ const contentType = computed(() => {
   return "text";
 });
 
+const splashArtworkSource = computed(() => {
+  if (typeof document === "undefined") return null;
+  const template = document.createElement("template");
+  template.innerHTML = DOMPurify.sanitize(props.content);
+  return template.content.querySelector("img")?.getAttribute("src") ?? null;
+});
+
 const isArtworkSplash = computed(() =>
   (contentType.value === "html" || contentType.value === "svg")
   && /<(?:img|svg)\b/i.test(props.content)
-  && !!props.presentation?.layout.artwork_aspect_ratio
-  && props.presentation.layout.artwork_aspect_ratio !== "natural",
+  && (!!props.presentation?.artwork || (!!props.presentation?.layout.artwork_aspect_ratio && props.presentation.layout.artwork_aspect_ratio !== "natural")),
 );
 
 const renderedContent = computed(() => {
@@ -391,22 +398,23 @@ if (import.meta.env.DEV && props.claim_experience) {
   <!-- ============================================================ -->
   <div
     v-else
-    class="x-claim-canvas min-w-0"
-    :style="isArtworkSplash && presentation ? { minHeight: 'calc(100svh - 11rem)' } : undefined"
-    :class="[isArtworkSplash ? 'flex-col gap-4' : '',
+    class="min-w-0"
+    :style="isArtworkSplash && presentation ? { minHeight: 'calc(100svh - 11rem)', padding: '0' } : undefined"
+    :class="[isArtworkSplash ? 'flex flex-col items-center' : 'x-claim-canvas',
 
-      isDisburseFlow
+      isArtworkSplash ? '' : isDisburseFlow
         ? 'min-h-screen flex items-center justify-center bg-gradient-to-b from-primary/5 via-background to-background p-4'
         : 'min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4'
     ]"
   >
-    <template v-if="isArtworkSplash">
+    <FormFlowArtworkSurface v-if="isArtworkSplash" :artwork-src="splashArtworkSource" class="self-stretch">
       <h2 v-if="title" class="text-center text-2xl font-semibold">{{ title }}</h2>
       <Card class="w-full max-w-2xl min-w-0 gap-0 border-0 py-0 shadow-sm" data-testid="form-flow-splash-artwork-card">
         <CardContent class="min-w-0 p-0">
           <FormFlowHtmlContent :html="renderedContent" />
         </CardContent>
       </Card>
+      <template #footer>
       <p v-if="timeoutSeconds > 0" class="text-center text-xs text-muted-foreground" role="status">{{ remainingSeconds }}s</p>
       <FormFlowVersionStrip :show="show_package_versions" :package-versions="package_versions" context="splash" />
       <FormFlowActions
@@ -419,7 +427,8 @@ if (import.meta.env.DEV && props.claim_experience) {
         :variant="isDisburseFlow ? 'immersive' : 'default'"
         @primary="handleContinue"
       />
-    </template>
+      </template>
+    </FormFlowArtworkSurface>
     <Card
       v-else
       :class="

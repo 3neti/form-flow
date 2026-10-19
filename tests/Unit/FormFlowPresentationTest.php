@@ -122,3 +122,28 @@ it('inherits a bounded artwork aspect ratio without forcing it on generic flows'
 it('rejects an unsupported artwork aspect ratio', function () {
     app(FormFlowPresentationResolver::class)->resolve(['layout' => ['artwork_aspect_ratio' => '1/0']]);
 })->throws(ValidationException::class);
+
+it('inherits artwork settings and freezes them when the flow starts', function () {
+    config()->set('form-flow.presentation.profiles.artwork', ['artwork' => ['background' => ['enabled' => true, 'opacity' => 0.55]]]);
+    $instructions = FormFlowInstructionsData::from([
+        'reference_id' => 'artwork-snapshot', 'presentation' => ['profile' => 'artwork'],
+        'steps' => [['handler' => 'splash', 'config' => ['content' => '<p>Welcome</p>']]],
+    ]);
+    $flows = app(FormFlowService::class);
+    $live = $flows->startFlow($instructions);
+    config()->set('form-flow.presentation.profiles.artwork.artwork.background.opacity', 0.1);
+    expect(data_get($flows->getFlowState($live['flow_id']), 'instructions.steps.0.config.presentation.artwork.background.opacity'))->toBe(0.55);
+    expect(app(FormFlowPresentationResolver::class)->resolve(['profile' => 'artwork'], ['artwork' => ['foreground' => ['position' => 'center']]])['artwork']['foreground']['position'])->toBe('center');
+});
+
+it('rejects unsupported artwork presentation settings', function (array $artwork) {
+    app(FormFlowPresentationResolver::class)->resolve(['artwork' => $artwork]);
+})->with([
+    [['background' => ['opacity' => 2]]],
+    [['background' => ['blur' => 100]]],
+    [['background' => ['overlay' => -1]]],
+    [['background' => ['script' => 'unsafe']]],
+    [['foreground' => ['position' => 'outside']]],
+    [['foreground' => ['padding' => 0]]],
+    [['foreground' => ['top_spacing' => 1000]]],
+])->throws(ValidationException::class);
