@@ -75,6 +75,8 @@ return [
     | variants that reuse the same driver components.
     |
     */
+    'presentation' => ['profiles' => []],
+
     'ui' => [
         'variant' => env('FORM_FLOW_UI_VARIANT', 'default'),
     ],

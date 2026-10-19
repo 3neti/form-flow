@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import FormFlowPresentation from "./components/FormFlowPresentation.vue";
+import type { FormFlowPresentation as PresentationPolicy } from "./components/formFlowPresentation";
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { router, Head } from "@inertiajs/vue3";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +46,7 @@ interface PackageVersion {
 }
 
 interface Props {
+  presentation?: PresentationPolicy | null;
   flow_id: string;
   step_index: number;
   title?: string;
@@ -274,6 +277,7 @@ if (import.meta.env.DEV && props.claim_experience) {
 </script>
 
 <template>
+  <FormFlowPresentation :presentation="presentation">
   <Head :title="pageTitle" />
 
   <!-- ============================================================ -->
@@ -289,7 +293,7 @@ if (import.meta.env.DEV && props.claim_experience) {
       >
         <!-- Hero logo -->
         <img
-          v-if="app_logo"
+          v-if="!presentation && app_logo"
           :src="app_logo"
           :alt="app_name ?? 'Logo'"
           class="form-flow-default-splash-logo mb-4 w-auto object-contain drop-shadow-lg animate-fade-in"
@@ -474,6 +478,8 @@ if (import.meta.env.DEV && props.claim_experience) {
       </CardContent>
     </Card>
   </div>
+
+  </FormFlowPresentation>
 </template>
 
 <style scoped>

@@ -23,6 +23,8 @@ class FormFlowService
      */
     public function startFlow(FormFlowInstructionsData $instructions): array
     {
+        $instructions = app(FormFlowPresentationResolver::class)->prepare($instructions);
+
         // Generate internal flow_id if not provided
         $flowId = $instructions->flow_id ?? uniqid('flow-', true);
 

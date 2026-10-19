@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import FormFlowPresentation from "./components/FormFlowPresentation.vue";
+import type { FormFlowPresentation as PresentationPolicy } from "./components/formFlowPresentation";
 import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { router, Head } from "@inertiajs/vue3";
 import {
@@ -137,6 +139,7 @@ interface ClaimExperience {
 }
 
 interface Props {
+  presentation?: PresentationPolicy | null;
   flow_id: string;
   step_index: number;
   step_name?: string;
@@ -313,6 +316,7 @@ const uiVariant = computed(() => normalizeFormFlowUiVariant(props.ui_variant));
 const isCompactUi = computed(() => uiVariant.value === "compact");
 const isImmersiveUi = computed(() => uiVariant.value === "immersive");
 const screenClass = computed(() => {
+  if (props.presentation) return "mx-auto w-full max-w-lg px-4 py-2";
   if (!isDisburseFlow.value) {
     return "container mx-auto max-w-2xl px-4 py-8";
   }
@@ -856,6 +860,7 @@ if (import.meta.env.DEV && props.claim_experience) {
 </script>
 
 <template>
+  <FormFlowPresentation :presentation="presentation">
   <Head :title="pageTitle" />
 
   <div :class="screenClass" :data-form-flow-ui-variant="uiVariant">
@@ -873,10 +878,16 @@ if (import.meta.env.DEV && props.claim_experience) {
     </Alert>
 
     <!-- Form Card -->
+    <FormFlowVersionStrip
+      v-if="presentation"
+      :show="props.show_package_versions"
+      :package-versions="props.package_versions"
+      :context="props.package_version_context"
+    />
     <Card :class="cardClass">
       <CardHeader :class="cardHeaderClass">
         <div
-          v-if="props.app_logo || props.app_name"
+          v-if="!presentation && (props.app_logo || props.app_name)"
           class="mb-3 flex items-center gap-3"
         >
           <img
@@ -906,7 +917,7 @@ if (import.meta.env.DEV && props.claim_experience) {
           />
 
           <div
-            v-if="claimWorkflow"
+            v-if="claimWorkflow && (!presentation || claimWorkflowReview.length > 0)"
             class="rounded-lg border border-primary/15 bg-primary/5 p-3"
             data-testid="form-flow-claim-workflow-panel"
           >
@@ -1847,9 +1858,12 @@ if (import.meta.env.DEV && props.claim_experience) {
     </Card>
 
     <FormFlowVersionStrip
+      v-if="!presentation"
       :show="props.show_package_versions"
       :package-versions="props.package_versions"
       :context="props.package_version_context"
     />
   </div>
+
+  </FormFlowPresentation>
 </template>

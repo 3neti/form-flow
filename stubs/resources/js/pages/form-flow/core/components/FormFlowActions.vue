@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useFormFlowPresentation } from "./formFlowPresentation";
 import type { ButtonHTMLAttributes } from "vue";
 import { computed, type CSSProperties } from "vue";
 import { Loader2 } from "lucide-vue-next";
@@ -44,20 +45,17 @@ const emit = defineEmits<{
   secondary: [];
 }>();
 
+const presentation = useFormFlowPresentation();
 const normalizedVariant = computed(() =>
-  normalizeFormFlowUiVariant(props.variant),
+  normalizeFormFlowUiVariant(presentation.value?.layout.density ?? props.variant),
 );
 
-const normalizedActionPlacement = computed<FormFlowActionPlacement>(() =>
-  props.actionPlacement === "bottom_sticky" ||
-  props.actionPlacement === "viewport_bottom" ||
-  props.actionPlacement === "bottom" ||
-  props.actionPlacement === "inline"
+const normalizedActionPlacement = computed<FormFlowActionPlacement>(() => {
+  if (presentation.value) return presentation.value.actions.placement;
+  return props.actionPlacement === "bottom_sticky" || props.actionPlacement === "viewport_bottom" || props.actionPlacement === "bottom" || props.actionPlacement === "inline"
     ? props.actionPlacement
-    : normalizedVariant.value === "immersive"
-      ? "bottom"
-      : "inline",
-);
+    : normalizedVariant.value === "immersive" ? "bottom" : "inline";
+});
 
 const containerClass = computed(() => {
   const columns =
@@ -123,7 +121,7 @@ const viewportBottomStyle = computed<CSSProperties | undefined>(() =>
       :disabled="props.secondaryDisabled || props.processing"
       @click="emit('secondary')"
     >
-      {{ props.secondaryLabel }}
+      {{ presentation?.actions.secondary_label ?? props.secondaryLabel }}
     </Button>
 
     <Button
@@ -133,7 +131,7 @@ const viewportBottomStyle = computed<CSSProperties | undefined>(() =>
       @click="emit('primary')"
     >
       <Loader2 v-if="props.processing" class="mr-2 h-4 w-4 animate-spin" />
-      {{ props.processing ? "Please wait..." : props.primaryLabel }}
+      {{ props.processing ? "Please wait..." : (presentation?.actions.primary_label ?? props.primaryLabel) }}
     </Button>
   </div>
 </template>

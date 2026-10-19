@@ -37,6 +37,9 @@ class FormFlowInstructionsData extends Data
 
         /** Flow description (for display) */
         public ?string $description = null,
+
+        /** Optional declarative presentation; omitted drivers retain legacy rendering. */
+        public ?array $presentation = null,
     ) {}
 
     /**

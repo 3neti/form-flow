@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import FormFlowPresentation from "./components/FormFlowPresentation.vue";
+import type { FormFlowPresentation as PresentationPolicy } from "./components/formFlowPresentation";
 import { Head, router } from "@inertiajs/vue3";
 import {
   Card,
@@ -51,6 +53,7 @@ interface PackageVersion {
 }
 
 interface Props {
+  presentation?: PresentationPolicy | null;
   flow_id: string;
   state: {
     reference_id: string;
@@ -325,6 +328,7 @@ if (import.meta.env.DEV && props.claim_experience) {
 </script>
 
 <template>
+  <FormFlowPresentation :presentation="presentation">
   <Head title="Flow Complete" />
 
   <!-- ============================================================ -->
@@ -634,4 +638,6 @@ if (import.meta.env.DEV && props.claim_experience) {
       </template>
     </Card>
   </div>
+
+  </FormFlowPresentation>
 </template>

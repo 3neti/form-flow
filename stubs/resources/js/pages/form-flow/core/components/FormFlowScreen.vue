@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useFormFlowPresentation } from "./formFlowPresentation";
 import type { HTMLAttributes } from "vue";
 import { computed } from "vue";
 import {
@@ -51,11 +52,13 @@ const props = withDefaults(
   },
 );
 
+const presentation = useFormFlowPresentation();
 const normalizedVariant = computed(() =>
-  normalizeFormFlowUiVariant(props.variant),
+  normalizeFormFlowUiVariant(presentation.value?.layout.density ?? props.variant),
 );
 
 const screenVariantClass = computed(() => {
+  if (presentation.value) return "w-full px-4 py-2";
   if (normalizedVariant.value === "immersive") {
     return "min-h-screen bg-gradient-to-b from-primary/5 via-background to-background px-3 py-3 sm:px-5 sm:py-5";
   }
@@ -68,6 +71,7 @@ const screenVariantClass = computed(() => {
 });
 
 const innerVariantClass = computed(() => {
+  if (presentation.value) return "mx-auto flex w-full max-w-lg flex-col";
   if (normalizedVariant.value === "immersive") {
     return "mx-auto flex min-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col sm:min-h-[calc(100vh-2.5rem)]";
   }
@@ -137,11 +141,17 @@ const contentVariantClass = computed(() => {
   <div data-form-flow-screen :class="[screenVariantClass, props.screenClass]">
     <div :class="[innerVariantClass, innerAlignmentClass, props.innerClass]">
       <slot name="alert" />
+      <FormFlowVersionStrip
+        v-if="presentation"
+        :show="props.showPackageVersions"
+        :package-versions="props.packageVersions"
+        :context="props.versionContext"
+      />
 
       <Card :class="[cardVariantClass, props.cardClass]">
         <CardHeader :class="headerVariantClass">
           <div
-            v-if="props.appLogo || props.appName"
+            v-if="!presentation && (props.appLogo || props.appName)"
             class="mb-3 flex items-center gap-3"
           >
             <img
@@ -174,6 +184,7 @@ const contentVariantClass = computed(() => {
       </Card>
 
       <FormFlowVersionStrip
+        v-if="!presentation"
         :show="props.showPackageVersions"
         :package-versions="props.packageVersions"
         :context="props.versionContext"

@@ -20,6 +20,8 @@ final class FormFlowPreviewCompiler
      */
     public function compile(FormFlowInstructionsData $instructions, array $context = []): array
     {
+        $instructions = app(FormFlowPresentationResolver::class)->prepare($instructions);
+
         return collect($instructions->steps)
             ->values()
             ->map(function (FormFlowStepData|array $step, int $index) use ($context): FormFlowPreviewStepData {

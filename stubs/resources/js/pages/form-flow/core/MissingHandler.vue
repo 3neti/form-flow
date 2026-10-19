@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import FormFlowPresentation from "./components/FormFlowPresentation.vue";
+import type { FormFlowPresentation as PresentationPolicy } from "./components/formFlowPresentation";
 import { router } from '@inertiajs/vue3'
 
 const props = defineProps<{
+  presentation?: PresentationPolicy | null;
   flow_id: string
   step_index: number
   handler_name: string
@@ -43,6 +46,7 @@ const handleGoBack = () => {
 </script>
 
 <template>
+  <FormFlowPresentation :presentation="presentation">
   <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
     <div class="max-w-md w-full">
       <!-- Production Mode: Error -->
@@ -136,4 +140,6 @@ const handleGoBack = () => {
       </div>
     </div>
   </div>
+
+  </FormFlowPresentation>
 </template>

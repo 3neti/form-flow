@@ -52,6 +52,7 @@ class FormFlowController extends Controller
                     }
                 },
             ],
+            'presentation' => 'nullable|array',
             'steps' => 'required|array|min:1',
             'steps.*.handler' => 'required|string',
             'steps.*.config' => 'nullable|array',

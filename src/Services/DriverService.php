@@ -63,6 +63,7 @@ class DriverService
             'reference_id' => $this->processReferenceId($context),
             'steps' => $this->processSteps($context),
             'callbacks' => $this->processCallbacks($context),
+            'presentation' => isset($this->config['presentation']) ? $this->getTemplateProcessor()->processArray($this->config['presentation'], $context) : null,
         ]);
     }
 

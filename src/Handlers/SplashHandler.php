@@ -99,6 +99,7 @@ class SplashHandler implements FormHandlerInterface, FormHandlerPreviewInterface
             'package_versions' => $step->config['package_versions'] ?? [],
             'show_package_versions' => (bool) ($step->config['show_package_versions'] ?? false),
             'preview_mode' => (bool) ($context['preview_mode'] ?? false),
+            'presentation' => $step->config['presentation'] ?? null,
         ];
 
         // When no custom content and no config override, pass structured props

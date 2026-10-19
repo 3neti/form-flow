@@ -108,6 +108,7 @@ class MissingHandler implements FormHandlerInterface, FormHandlerPreviewInterfac
             'is_production' => $isProduction,
             'can_skip' => ! $isProduction,
             'preview_mode' => (bool) ($context['preview_mode'] ?? false),
+            'presentation' => $step->config['presentation'] ?? null,
         ];
     }
 

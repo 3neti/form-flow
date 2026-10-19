@@ -117,6 +117,7 @@ class FormHandler implements FormHandlerInterface, FormHandlerPreviewInterface
             'package_versions' => $resolvedConfig['package_versions'] ?? [],
             'show_package_versions' => (bool) ($resolvedConfig['show_package_versions'] ?? false),
             'preview_mode' => (bool) ($context['preview_mode'] ?? false),
+            'presentation' => $step->config['presentation'] ?? null,
         ];
     }
 
