@@ -250,3 +250,7 @@ vendor/bin/pest tests/Unit/FormFlowPresentationTest.php tests/Unit/DriverPresent
 When extending the contract, test precedence, rejected values, production
 version suppression, frozen state, and actual rendered effects. Test handler
 states and mobile layouts, not just that configuration reaches page props.
+
+## Server-owned terminal navigation
+
+A domain completion handler may return `(new \LBHurtado\FormFlowManager\Data\TerminalNavigation($serverSelectedUrl))->toResponse($request)` after committing its authoritative outcome. Inertia receives a location response; ordinary requests receive a 303 GET redirect. Both suppress caching and referrer disclosure. The URL must come from validated domain policy, never directly from request input. The response performs no execution, authentication, destination validation, or arrival verification. Pending flows remain pending until the domain selects this terminal result.
